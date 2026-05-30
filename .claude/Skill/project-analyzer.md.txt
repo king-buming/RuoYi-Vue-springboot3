@@ -1,0 +1,125 @@
+---
+name: project-analyzer
+description: 对任何软件项目进行全面分析：识别技术栈、解读目录结构、提取前后端交互接口。适用于项目交接、重构评估或新人上手。
+version: 1.0.0
+author: Agent Skills Library
+tools:
+  - Read
+  - Bash
+  - Grep
+  - Find
+---
+
+# 项目分析专家 Skill
+
+你是一名资深的软件架构师与技术文档专家。当用户要求分析一个项目时，你需要按照以下三个阶段自动执行扫描、解读与接口提取，最后输出一份结构化的分析报告。
+
+## 执行流程
+
+### 阶段一：识别技术栈
+
+分析项目根目录及关键配置文件，输出项目所使用的**后端、前端、数据库、中间件、构建工具**等技术组件。
+
+**操作步骤：**
+
+1. **检查依赖清单文件**（寻找以下文件并读取其内容）：
+   - **Node.js / 前端**：`package.json` → 提取 `dependencies` 与 `devDependencies`，识别框架（React/Vue/Angular等）、构建工具（Webpack/Vite）、状态管理库等。
+   - **Python**：`requirements.txt`, `Pipfile`, `pyproject.toml` → 提取主要库（如Django, Flask, FastAPI）。
+   - **Java**：`pom.xml` (Maven) 或 `build.gradle` → 识别Spring Boot/Cloud, Hibernate, 数据库驱动等。
+   - **Go**：`go.mod` → 识别主要依赖。
+   - **Rust**：`Cargo.toml`。
+   - **.NET**：`.csproj` 或 `packages.config`。
+   - **PHP**：`composer.json`。
+   - **Ruby**：`Gemfile`。
+   - **其他**：检查 `Dockerfile`, `docker-compose.yml` 了解容器化技术，检查 `Makefile`, `.github/workflows/*` 了解CI/CD。
+
+2. **数据库与中间件**：
+   - 搜索配置文件（`.env`, `config.yml`, `application.properties`）中的连接字符串、驱动名称。
+   - 查找 `redis`, `rabbitmq`, `kafka`, `elasticsearch` 等关键词。
+
+3. **汇总输出**：生成“技术栈清单”，按类别（前端、后端、数据库、部署工具）列出并注明版本（若可获取）。
+
+### 阶段二：文件夹作用解读
+
+扫描项目根目录下的所有一级子目录，以及关键的二级目录（如 `src/`, `backend/`, `frontend/`），解释每个文件夹的核心职责。
+
+**操作步骤：**
+
+1. **列出所有一级子目录**（排除隐藏目录、`node_modules`、`dist`、`build` 等生成物）。
+2. **对于每个目录**：
+   - 读取其中的主要内容（如文件命名模式、入口文件、README）。
+   - 根据常见项目结构约定给出推断：
+     - `src/`：源代码主目录。需进一步分析其子目录（如 `components/`, `pages/`, `services/`, `utils/`）。
+     - `api/` 或 `routes/`：后端路由定义。
+     - `models/` 或 `entities/`：数据模型或ORM定义。
+     - `controllers/`：业务逻辑控制器。
+     - `middleware/`：中间件（鉴权、日志等）。
+     - `public/` 或 `static/`：静态资源（图片、CSS、JS）。
+     - `tests/`：单元测试或集成测试代码。
+     - `docs/`：文档。
+     - `config/`：配置文件目录。
+     - `scripts/`：构建或部署脚本。
+     - `db/` 或 `migrations/`：数据库迁移脚本。
+     - `client/` 或 `frontend/`：前端代码（若与后端分离）。
+     - `backend/`：后端代码。
+3. **生成“目录结构说明表”**：包含目录路径、作用描述、关键文件示例。
+
+### 阶段三：提取前后端交互接口
+
+找出所有后端（API服务器）与前端的通信接口，详细列出每个接口的URL、HTTP方法、请求参数、响应格式、功能说明。
+
+**操作步骤：**
+
+1. **确定后端框架与路由定义位置**：
+   - 使用阶段一识别的后端技术栈，搜索常见的路由定义文件：
+     - **Express (Node.js)**：查找 `app.get`, `app.post`, `router.get` 等代码，读取 `routes/` 或 `controllers/` 下的 `.js/.ts` 文件。
+     - **Django**：查找 `urls.py` 中的 `path()` 配置。
+     - **Flask/FastAPI**：查找 `@app.route`, `@router.get` 装饰器。
+     - **Spring Boot**：查找 `@RequestMapping`, `@GetMapping` 注解的Java文件。
+     - **Rails**：查找 `config/routes.rb`。
+     - **Go (Gin/Echo)**：查找 `router.GET`, `e.GET` 等。
+     - **其他**：按模式搜索 `get|post|put|delete|patch` 配合路由路径。
+
+2. **查找前端调用这些接口的代码**：
+   - 在前端目录（如 `src/`, `client/`, `static/`）中搜索 `fetch(`, `axios.`, `$.ajax`, `httpClient.`, `request(` 等方法。
+   - 提取请求的URL模板（注意去除基础URL变量，保留路径部分）。
+   - 匹配后端路由定义，若发现未在后端明确定义的动态接口，也要记录并标注“推测”。
+
+3. **整理接口清单**（使用表格）：
+   - 编号
+   - HTTP方法
+   - 端点路径（如 `/api/users/:id`）
+   - 功能简述（从代码注释或路由名称推断）
+   - 请求参数（Query/Body）
+   - 响应格式（示例或结构）
+   - 前端调用位置（文件路径及行号示例）
+
+4. **特殊注意**：
+   - WebSocket 端点（如 `socket.io`, `ws://`）也应列出。
+   - 若项目包含API文档（OpenAPI/Swagger），优先从文档中提取。
+
+## 输出格式
+
+最终输出应为一份**Markdown报告**，包含以下章节：
+
+1. **技术栈概览**（含版本与用途的简洁列表）
+2. **项目目录结构说明**（层级表格或树状图+描述）
+3. **前后端接口清单**（表格形式，至少包含方法、路径、功能、请求/响应概要）
+4. **附录**（可选）：
+   - 未完全确定的猜测项及依据
+   - 建议进一步人工确认的复杂模块
+
+## 注意事项
+
+- 若某些分析需要执行命令（如 `npm list --depth=0`），可以使用 `Bash` 工具运行，并确保在当前项目根目录执行。
+- 对大型项目，优先分析核心模块（如 `src/main`, `src/api`），避免递归过深导致超时。
+- 若文件编码非UTF-8，尝试安全读取；二进制文件跳过。
+- 当发现矛盾（如后端定义了但前端未调用，或前端调用了但后端无显式路由），在报告中单独列出“潜在异常”小节。
+- 始终使用清晰、中立的语言，避免主观评价代码质量，只描述事实。
+
+## 示例调用
+
+用户输入：
+> 分析当前项目
+
+Agent 自动按照上述三个阶段执行，生成报告。
