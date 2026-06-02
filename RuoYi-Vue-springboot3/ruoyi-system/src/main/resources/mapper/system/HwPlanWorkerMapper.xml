@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.HwPlanWorkerMapper">
+
+    <resultMap type="HwPlanWorker" id="HwPlanWorkerResult">
+        <id     property="id"         column="id"          />
+        <result property="planId"     column="plan_id"     />
+        <result property="workerId"   column="worker_id"   />
+        <result property="workerName" column="worker_name" />
+        <result property="roleType"   column="role_type"   />
+        <result property="createBy"   column="create_by"   />
+        <result property="createTime" column="create_time" />
+    </resultMap>
+
+    <select id="selectByPlanId" parameterType="Long" resultMap="HwPlanWorkerResult">
+        select id, plan_id, worker_id, worker_name, role_type, create_by, create_time
+        from hw_plan_worker where plan_id = #{planId}
+    </select>
+
+    <insert id="batchInsert" parameterType="list">
+        insert into hw_plan_worker (plan_id, worker_id, worker_name, role_type, create_by, create_time)
+        values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.planId}, #{item.workerId}, #{item.workerName}, #{item.roleType}, #{item.createBy}, sysdate())
+        </foreach>
+    </insert>
+
+    <delete id="deleteByPlanId" parameterType="Long">
+        delete from hw_plan_worker where plan_id = #{planId}
+    </delete>
+
+    <delete id="deleteById" parameterType="Long">
+        delete from hw_plan_worker where id = #{id}
+    </delete>
+
+</mapper>

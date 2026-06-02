@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.HwPlanMapper">
+
+    <resultMap type="HwPlan" id="HwPlanResult">
+        <id     property="planId"           column="plan_id"              />
+        <result property="cityCounty"       column="city_county"          />
+        <result property="constructionSite" column="construction_site"    />
+        <result property="siteLatitude"     column="site_latitude"        />
+        <result property="siteLongitude"    column="site_longitude"       />
+        <result property="planWorkTime"     column="plan_work_time"       />
+        <result property="projectName"      column="project_name"         />
+        <result property="workType"         column="work_type"            />
+        <result property="constructionUnit" column="construction_unit"    />
+        <result property="workers"          column="workers"              />
+        <result property="workContent"      column="work_content"         />
+        <result property="status"           column="status"               />
+        <result property="createBy"         column="create_by"            />
+        <result property="createTime"       column="create_time"          />
+        <result property="updateBy"         column="update_by"            />
+        <result property="updateTime"       column="update_time"          />
+        <result property="remark"           column="remark"               />
+    </resultMap>
+
+    <sql id="selectHwPlanVo">
+        select plan_id, city_county, construction_site, site_latitude, site_longitude,
+               plan_work_time, project_name, work_type, construction_unit, workers,
+               work_content, status, create_by, create_time, update_by, update_time, remark
+        from hw_plan
+    </sql>
+
+    <select id="selectHwPlanList" parameterType="HwPlan" resultMap="HwPlanResult">
+        <include refid="selectHwPlanVo"/>
+        <where>
+            <if test="projectName != null and projectName != ''">
+                AND project_name like concat('%', #{projectName}, '%')
+            </if>
+            <if test="workType != null and workType != ''">
+                AND work_type = #{workType}
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+            <if test="params.beginTime != null and params.beginTime != ''">
+                AND create_time &gt;= #{params.beginTime}
+            </if>
+            <if test="params.endTime != null and params.endTime != ''">
+                AND create_time &lt;= #{params.endTime}
+            </if>
+        </where>
+    </select>
+
+    <select id="selectHwPlanById" parameterType="Long" resultMap="HwPlanResult">
+        <include refid="selectHwPlanVo"/>
+        where plan_id = #{planId}
+    </select>
+
+    <insert id="insertHwPlan" parameterType="HwPlan" useGeneratedKeys="true" keyProperty="planId">
+        insert into hw_plan(
+            <if test="cityCounty != null and cityCounty != ''">city_county,</if>
+            <if test="constructionSite != null and constructionSite != ''">construction_site,</if>
+            <if test="siteLatitude != null">site_latitude,</if>
+            <if test="siteLongitude != null">site_longitude,</if>
+            <if test="planWorkTime != null">plan_work_time,</if>
+            <if test="projectName != null and projectName != ''">project_name,</if>
+            <if test="workType != null and workType != ''">work_type,</if>
+            <if test="constructionUnit != null and constructionUnit != ''">construction_unit,</if>
+            <if test="workers != null and workers != ''">workers,</if>
+            <if test="workContent != null and workContent != ''">work_content,</if>
+            <if test="status != null and status != ''">status,</if>
+            <if test="createBy != null and createBy != ''">create_by,</if>
+            create_time
+        )values(
+            <if test="cityCounty != null and cityCounty != ''">#{cityCounty},</if>
+            <if test="constructionSite != null and constructionSite != ''">#{constructionSite},</if>
+            <if test="siteLatitude != null">#{siteLatitude},</if>
+            <if test="siteLongitude != null">#{siteLongitude},</if>
+            <if test="planWorkTime != null">#{planWorkTime},</if>
+            <if test="projectName != null and projectName != ''">#{projectName},</if>
+            <if test="workType != null and workType != ''">#{workType},</if>
+            <if test="constructionUnit != null and constructionUnit != ''">#{constructionUnit},</if>
+            <if test="workers != null and workers != ''">#{workers},</if>
+            <if test="workContent != null and workContent != ''">#{workContent},</if>
+            <if test="status != null and status != ''">#{status},</if>
+            <if test="createBy != null and createBy != ''">#{createBy},</if>
+            sysdate()
+        )
+    </insert>
+
+    <update id="updateHwPlan" parameterType="HwPlan">
+        update hw_plan
+        <set>
+            <if test="cityCounty != null and cityCounty != ''">city_county = #{cityCounty},</if>
+            <if test="constructionSite != null and constructionSite != ''">construction_site = #{constructionSite},</if>
+            <if test="siteLatitude != null">site_latitude = #{siteLatitude},</if>
+            <if test="siteLongitude != null">site_longitude = #{siteLongitude},</if>
+            <if test="planWorkTime != null">plan_work_time = #{planWorkTime},</if>
+            <if test="projectName != null and projectName != ''">project_name = #{projectName},</if>
+            <if test="workType != null and workType != ''">work_type = #{workType},</if>
+            <if test="constructionUnit != null and constructionUnit != ''">construction_unit = #{constructionUnit},</if>
+            <if test="workers != null and workers != ''">workers = #{workers},</if>
+            <if test="workContent != null and workContent != ''">work_content = #{workContent},</if>
+            <if test="status != null and status != ''">status = #{status},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </set>
+        where plan_id = #{planId}
+    </update>
+
+    <delete id="deleteHwPlanById" parameterType="Long">
+        delete from hw_plan where plan_id = #{planId}
+    </delete>
+
+    <delete id="deleteHwPlanByIds" parameterType="Long">
+        delete from hw_plan where plan_id in
+        <foreach collection="array" item="planId" open="(" separator="," close=")">
+            #{planId}
+        </foreach>
+    </delete>
+
+</mapper>

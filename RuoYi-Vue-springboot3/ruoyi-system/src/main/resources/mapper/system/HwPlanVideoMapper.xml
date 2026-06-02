@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.HwPlanVideoMapper">
+
+    <resultMap type="HwPlanVideo" id="HwPlanVideoResult">
+        <id     property="id"         column="id"          />
+        <result property="planId"     column="plan_id"     />
+        <result property="recordId"   column="record_id"   />
+        <result property="recordName" column="record_name" />
+        <result property="startTime"  column="start_time"  />
+        <result property="endTime"    column="end_time"    />
+        <result property="createBy"   column="create_by"   />
+        <result property="createTime" column="create_time" />
+    </resultMap>
+
+    <select id="selectByPlanId" parameterType="Long" resultMap="HwPlanVideoResult">
+        select id, plan_id, record_id, record_name, start_time, end_time, create_by, create_time
+        from hw_plan_video where plan_id = #{planId}
+    </select>
+
+    <insert id="insertHwPlanVideo" parameterType="HwPlanVideo" useGeneratedKeys="true" keyProperty="id">
+        insert into hw_plan_video(
+            <if test="planId != null">plan_id,</if>
+            <if test="recordId != null">record_id,</if>
+            <if test="recordName != null and recordName != ''">record_name,</if>
+            <if test="startTime != null">start_time,</if>
+            <if test="endTime != null">end_time,</if>
+            <if test="createBy != null and createBy != ''">create_by,</if>
+            create_time
+        )values(
+            <if test="planId != null">#{planId},</if>
+            <if test="recordId != null">#{recordId},</if>
+            <if test="recordName != null and recordName != ''">#{recordName},</if>
+            <if test="startTime != null">#{startTime},</if>
+            <if test="endTime != null">#{endTime},</if>
+            <if test="createBy != null and createBy != ''">#{createBy},</if>
+            sysdate()
+        )
+    </insert>
+
+    <delete id="deleteById" parameterType="Long">
+        delete from hw_plan_video where id = #{id}
+    </delete>
+
+    <delete id="deleteByPlanId" parameterType="Long">
+        delete from hw_plan_video where plan_id = #{planId}
+    </delete>
+
+</mapper>

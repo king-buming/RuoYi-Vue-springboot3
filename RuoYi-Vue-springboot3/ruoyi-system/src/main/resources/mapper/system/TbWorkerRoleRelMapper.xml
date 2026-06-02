@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.TbWorkerRoleRelMapper">
+
+    <select id="selectRoleIdsByWorkerId" parameterType="Long" resultType="Long">
+        select role_id from tb_worker_role_rel where worker_id = #{workerId}
+    </select>
+
+    <delete id="deleteByWorkerId" parameterType="Long">
+        delete from tb_worker_role_rel where worker_id = #{workerId}
+    </delete>
+
+    <insert id="insertWorkerRole">
+        insert into tb_worker_role_rel (worker_id, role_id) values (#{workerId}, #{roleId})
+    </insert>
+
+    <select id="selectAllWithRoleNames" resultType="java.util.HashMap">
+        select r.worker_id, o.role_name as roleName
+        from tb_worker_role_rel r
+        join tb_worker_role o on o.id = r.role_id
+    </select>
+
+</mapper>

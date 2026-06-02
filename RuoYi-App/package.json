@@ -1,0 +1,19 @@
+{
+  "name": "ruoyi-app-smart-site",
+  "version": "1.0.0",
+  "scripts": {
+    "dev:h5": "uni-app dev --platform h5",
+    "build:h5": "uni-app build --platform h5"
+  },
+  "dependencies": {
+    "vue": "^2.6.14",
+    "uni-ui": "^1.5.0"
+  },
+  "devDependencies": {
+    "@dcloudio/uni-app": "^2.0.0",
+    "@dcloudio/uni-cli-shared": "^2.0.0",
+    "@dcloudio/uni-h5": "^2.0.0",
+    "@dcloudio/uni-helper-json": "*",
+    "@dcloudio/vite-plugin-uni": "*"
+  }
+}

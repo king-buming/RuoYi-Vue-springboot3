@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.TbWorkerMapper">
+    
+    <resultMap type="TbWorker" id="TbWorkerResult">
+        <result property="id"    column="id"    />
+        <result property="workerName"    column="worker_name"    />
+        <result property="phone"    column="phone"    />
+        <result property="idCard"    column="id_card"    />
+        <result property="gender"    column="gender"    />
+        <result property="unitType"    column="unit_type"    />
+        <result property="status"    column="status"    />
+        <result property="faceStatus"    column="face_status"    />
+        <result property="auditStatus"    column="audit_status"    />
+        <result property="delFlag"    column="del_flag"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="remark"    column="remark"    />
+    </resultMap>
+
+    <sql id="selectTbWorkerVo">
+        select id, worker_name, phone, id_card, gender, unit_type, status, face_status, audit_status, del_flag, create_by, create_time, update_by, update_time, remark from tb_worker
+    </sql>
+
+    <select id="selectTbWorkerList" parameterType="TbWorker" resultMap="TbWorkerResult">
+        <include refid="selectTbWorkerVo"/>
+        <where>
+            and del_flag = '0'
+            <if test="workerName != null  and workerName != ''"> and worker_name like concat('%', #{workerName}, '%')</if>
+            <if test="phone != null  and phone != ''"> and phone = #{phone}</if>
+            <if test="idCard != null  and idCard != ''"> and id_card = #{idCard}</if>
+            <if test="gender != null  and gender != ''"> and gender = #{gender}</if>
+            <if test="unitType != null "> and unit_type = #{unitType}</if>
+            <if test="status != null  and status != ''"> and status = #{status}</if>
+            <if test="faceStatus != null  and faceStatus != ''"> and face_status = #{faceStatus}</if>
+            <if test="auditStatus != null  and auditStatus != ''"> and audit_status = #{auditStatus}</if>
+        </where>
+    </select>
+    
+    <select id="selectTbWorkerById" parameterType="Long" resultMap="TbWorkerResult">
+        <include refid="selectTbWorkerVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertTbWorker" parameterType="TbWorker" useGeneratedKeys="true" keyProperty="id">
+        insert into tb_worker
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="workerName != null and workerName != ''">worker_name,</if>
+            <if test="phone != null">phone,</if>
+            <if test="idCard != null">id_card,</if>
+            <if test="gender != null">gender,</if>
+            <if test="unitType != null">unit_type,</if>
+            <if test="status != null">status,</if>
+            <if test="faceStatus != null">face_status,</if>
+            <if test="auditStatus != null">audit_status,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="remark != null">remark,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="workerName != null and workerName != ''">#{workerName},</if>
+            <if test="phone != null">#{phone},</if>
+            <if test="idCard != null">#{idCard},</if>
+            <if test="gender != null">#{gender},</if>
+            <if test="unitType != null">#{unitType},</if>
+            <if test="status != null">#{status},</if>
+            <if test="faceStatus != null">#{faceStatus},</if>
+            <if test="auditStatus != null">#{auditStatus},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="remark != null">#{remark},</if>
+         </trim>
+    </insert>
+
+    <update id="updateTbWorker" parameterType="TbWorker">
+        update tb_worker
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="workerName != null and workerName != ''">worker_name = #{workerName},</if>
+            <if test="phone != null">phone = #{phone},</if>
+            <if test="idCard != null">id_card = #{idCard},</if>
+            <if test="gender != null">gender = #{gender},</if>
+            <if test="unitType != null">unit_type = #{unitType},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="faceStatus != null">face_status = #{faceStatus},</if>
+            <if test="auditStatus != null">audit_status = #{auditStatus},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteTbWorkerById" parameterType="Long">
+        delete from tb_worker where id = #{id}
+    </delete>
+
+    <delete id="deleteTbWorkerByIds" parameterType="String">
+        delete from tb_worker where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <select id="selectWorkerOptions" resultMap="TbWorkerResult">
+        select id, worker_name, del_flag from tb_worker order by id
+    </select>
+
+    <select id="selectActiveWorkerOptions" resultMap="TbWorkerResult">
+        select id, worker_name from tb_worker where del_flag = '0' order by id
+    </select>
+
+    <select id="checkIdCardUnique" resultType="int">
+        select count(1) from tb_worker where id_card = #{idCard}
+        <if test="excludeId != null"> and id != #{excludeId}</if>
+    </select>
+</mapper>

@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.TbWorkerFaceMapper">
+
+    <resultMap type="TbWorkerFace" id="TbWorkerFaceResult">
+        <result property="id"    column="id"    />
+        <result property="workerId"    column="worker_id"    />
+        <result property="faceImgUrl"    column="face_img_url"    />
+        <result property="faceFeature"    column="face_feature"    />
+        <result property="collectTime"    column="collect_time"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="remark"    column="remark"    />
+    </resultMap>
+
+    <sql id="selectTbWorkerFaceVo">
+        select id, worker_id, face_img_url, face_feature, collect_time, create_by, create_time, update_by, update_time, remark from tb_worker_face
+    </sql>
+
+    <select id="selectTbWorkerFaceList" parameterType="TbWorkerFace" resultMap="TbWorkerFaceResult">
+        <include refid="selectTbWorkerFaceVo"/>
+        <where>
+            <if test="workerId != null "> and worker_id = #{workerId}</if>
+            <if test="faceImgUrl != null  and faceImgUrl != ''"> and face_img_url = #{faceImgUrl}</if>
+            <if test="collectTime != null "> and collect_time = #{collectTime}</if>
+        </where>
+    </select>
+
+    <select id="selectTbWorkerFaceById" parameterType="Long" resultMap="TbWorkerFaceResult">
+        <include refid="selectTbWorkerFaceVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertTbWorkerFace" parameterType="TbWorkerFace" useGeneratedKeys="true" keyProperty="id">
+        insert into tb_worker_face
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="workerId != null">worker_id,</if>
+            <if test="faceImgUrl != null">face_img_url,</if>
+            <if test="faceFeature != null">face_feature,</if>
+            <if test="collectTime != null">collect_time,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="remark != null">remark,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="workerId != null">#{workerId},</if>
+            <if test="faceImgUrl != null">#{faceImgUrl},</if>
+            <if test="faceFeature != null">#{faceFeature},</if>
+            <if test="collectTime != null">#{collectTime},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="remark != null">#{remark},</if>
+         </trim>
+    </insert>
+
+    <update id="updateTbWorkerFace" parameterType="TbWorkerFace">
+        update tb_worker_face
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="workerId != null">worker_id = #{workerId},</if>
+            <if test="faceImgUrl != null">face_img_url = #{faceImgUrl},</if>
+            <if test="faceFeature != null">face_feature = #{faceFeature},</if>
+            <if test="collectTime != null">collect_time = #{collectTime},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteTbWorkerFaceById" parameterType="Long">
+        delete from tb_worker_face where id = #{id}
+    </delete>
+
+    <delete id="deleteTbWorkerFaceByIds" parameterType="String">
+        delete from tb_worker_face where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <delete id="deleteTbWorkerFaceByWorkerId" parameterType="Long">
+        delete from tb_worker_face where worker_id = #{workerId}
+    </delete>
+</mapper>

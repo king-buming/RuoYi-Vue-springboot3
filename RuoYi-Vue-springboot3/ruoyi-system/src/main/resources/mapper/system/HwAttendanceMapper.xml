@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.HwAttendanceMapper">
+
+    <resultMap type="HwAttendance" id="HwAttendanceResult">
+        <id     property="attendanceId"  column="attendance_id"   />
+        <result property="planId"        column="plan_id"         />
+        <result property="userId"        column="user_id"         />
+        <result property="userName"      column="user_name"       />
+        <result property="checkType"     column="check_type"      />
+        <result property="checkMethod"   column="check_method"    />
+        <result property="checkTime"     column="check_time"      />
+        <result property="location"      column="location"        />
+        <result property="checkStatus"   column="check_status"    />
+        <result property="failReason"    column="fail_reason"     />
+        <result property="faceImage"     column="face_image"      />
+        <result property="createBy"      column="create_by"       />
+        <result property="createTime"    column="create_time"     />
+        <result property="updateBy"      column="update_by"       />
+        <result property="updateTime"    column="update_time"     />
+        <result property="remark"        column="remark"          />
+    </resultMap>
+
+    <sql id="selectHwAttendanceVo">
+        select a.attendance_id, a.plan_id, a.user_id, a.user_name, a.check_type,
+               a.check_method, a.check_time, a.location, a.check_status, a.fail_reason,
+               a.face_image, a.create_by, a.create_time, a.update_by, a.update_time, a.remark
+        from hw_attendance a
+    </sql>
+
+    <select id="selectHwAttendanceList" parameterType="HwAttendance" resultMap="HwAttendanceResult">
+        <include refid="selectHwAttendanceVo"/>
+        <where>
+            <if test="planId != null">
+                AND a.plan_id = #{planId}
+            </if>
+            <if test="userName != null and userName != ''">
+                AND a.user_name like concat('%', #{userName}, '%')
+            </if>
+            <if test="checkType != null and checkType != ''">
+                AND a.check_type = #{checkType}
+            </if>
+            <if test="checkMethod != null and checkMethod != ''">
+                AND a.check_method = #{checkMethod}
+            </if>
+            <if test="checkStatus != null and checkStatus != ''">
+                AND a.check_status = #{checkStatus}
+            </if>
+            <if test="params.beginTime != null and params.beginTime != ''">
+                AND a.check_time &gt;= #{params.beginTime}
+            </if>
+            <if test="params.endTime != null and params.endTime != ''">
+                AND a.check_time &lt;= #{params.endTime}
+            </if>
+        </where>
+        order by a.check_time desc
+    </select>
+
+    <select id="selectHwAttendanceById" parameterType="Long" resultMap="HwAttendanceResult">
+        <include refid="selectHwAttendanceVo"/>
+        where a.attendance_id = #{attendanceId}
+    </select>
+
+    <insert id="insertHwAttendance" parameterType="HwAttendance" useGeneratedKeys="true" keyProperty="attendanceId">
+        insert into hw_attendance(
+            <if test="planId != null">plan_id,</if>
+            <if test="userId != null">user_id,</if>
+            <if test="userName != null and userName != ''">user_name,</if>
+            <if test="checkType != null and checkType != ''">check_type,</if>
+            <if test="checkMethod != null and checkMethod != ''">check_method,</if>
+            <if test="checkTime != null">check_time,</if>
+            <if test="location != null and location != ''">location,</if>
+            <if test="checkStatus != null and checkStatus != ''">check_status,</if>
+            <if test="failReason != null and failReason != ''">fail_reason,</if>
+            <if test="faceImage != null and faceImage != ''">face_image,</if>
+            <if test="createBy != null and createBy != ''">create_by,</if>
+            create_time
+        )values(
+            <if test="planId != null">#{planId},</if>
+            <if test="userId != null">#{userId},</if>
+            <if test="userName != null and userName != ''">#{userName},</if>
+            <if test="checkType != null and checkType != ''">#{checkType},</if>
+            <if test="checkMethod != null and checkMethod != ''">#{checkMethod},</if>
+            <if test="checkTime != null">#{checkTime},</if>
+            <if test="location != null and location != ''">#{location},</if>
+            <if test="checkStatus != null and checkStatus != ''">#{checkStatus},</if>
+            <if test="failReason != null and failReason != ''">#{failReason},</if>
+            <if test="faceImage != null and faceImage != ''">#{faceImage},</if>
+            <if test="createBy != null and createBy != ''">#{createBy},</if>
+            sysdate()
+        )
+    </insert>
+
+    <select id="selectLastCheckIn" resultMap="HwAttendanceResult">
+        <include refid="selectHwAttendanceVo"/>
+        where a.plan_id = #{planId} and a.user_id = #{userId} and a.check_type = '0'
+        order by a.check_time desc limit 1
+    </select>
+
+    <select id="selectLastCheckOut" resultMap="HwAttendanceResult">
+        <include refid="selectHwAttendanceVo"/>
+        where a.plan_id = #{planId} and a.user_id = #{userId} and a.check_type = '1'
+        order by a.check_time desc limit 1
+    </select>
+
+    <select id="selectOvertimeUncheckedPlans" parameterType="int" resultMap="com.ruoyi.system.mapper.HwPlanMapper.HwPlanResult">
+        select p.*
+        from hw_plan p
+        where p.plan_work_time &lt; date_sub(now(), interval #{minutes} minute)
+        and p.status = '0'
+        and not exists (
+            select 1 from hw_attendance a
+            where a.plan_id = p.plan_id and a.check_type = '0'
+        )
+    </select>
+
+    <select id="selectOvertimeCheckIns" parameterType="int" resultMap="HwAttendanceResult">
+        <include refid="selectHwAttendanceVo"/>
+        where a.check_type = '0'
+        and a.check_time &lt; date_sub(now(), interval #{minutes} minute)
+        and not exists (
+            select 1 from hw_attendance b
+            where b.plan_id = a.plan_id and b.user_id = a.user_id and b.check_type = '1'
+            and b.check_time &gt; a.check_time
+        )
+    </select>
+
+    <update id="updateHwAttendance" parameterType="HwAttendance">
+        update hw_attendance
+        <set>
+            <if test="checkStatus != null and checkStatus != ''">check_status = #{checkStatus},</if>
+            <if test="failReason != null and failReason != ''">fail_reason = #{failReason},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </set>
+        where attendance_id = #{attendanceId}
+    </update>
+
+    <delete id="deleteHwAttendanceById" parameterType="Long">
+        delete from hw_attendance where attendance_id = #{attendanceId}
+    </delete>
+
+    <delete id="deleteHwAttendanceByIds" parameterType="Long">
+        delete from hw_attendance where attendance_id in
+        <foreach collection="array" item="attendanceId" open="(" separator="," close=")">
+            #{attendanceId}
+        </foreach>
+    </delete>
+
+</mapper>

@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.TbWorkerCheckinMapper">
+
+    <resultMap type="TbWorkerCheckin" id="TbWorkerCheckinResult">
+        <result property="id" column="id"/>
+        <result property="workerId" column="worker_id"/>
+        <result property="roleId" column="role_id"/>
+        <result property="checkType" column="check_type"/>
+        <result property="checkTime" column="check_time"/>
+        <result property="checkMethod" column="check_method"/>
+        <result property="siteId" column="site_id"/>
+        <result property="latitude" column="latitude"/>
+        <result property="longitude" column="longitude"/>
+        <result property="photoUrl" column="photo_url"/>
+        <result property="aiResult" column="ai_result"/>
+        <result property="helmetFlag" column="helmet_flag"/>
+        <result property="vestFlag" column="vest_flag"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
+    <sql id="selectVo">
+        select id, worker_id, role_id, check_type, check_time, check_method, site_id, latitude, longitude, photo_url, ai_result, helmet_flag, vest_flag,
+               create_by, create_time, update_by, update_time, remark from tb_worker_checkin
+    </sql>
+
+    <select id="selectTbWorkerCheckinList" parameterType="TbWorkerCheckin" resultMap="TbWorkerCheckinResult">
+        <include refid="selectVo"/>
+        <where>
+            <if test="workerId != null"> and worker_id = #{workerId}</if>
+            <if test="roleId != null"> and role_id = #{roleId}</if>
+            <if test="checkType != null and checkType != ''"> and check_type = #{checkType}</if>
+            <if test="checkMethod != null and checkMethod != ''"> and check_method = #{checkMethod}</if>
+            <if test="params.beginCheckTime != null and params.beginCheckTime != ''">
+                and check_time &gt;= #{params.beginCheckTime}
+            </if>
+            <if test="params.endCheckTime != null and params.endCheckTime != ''">
+                and check_time &lt;= #{params.endCheckTime}
+            </if>
+            <if test="siteId != null"> and site_id = #{siteId}</if>
+        </where>
+    </select>
+
+    <select id="selectTbWorkerCheckinById" parameterType="Long" resultMap="TbWorkerCheckinResult">
+        <include refid="selectVo"/> where id = #{id}
+    </select>
+
+    <insert id="insertTbWorkerCheckin" parameterType="TbWorkerCheckin" useGeneratedKeys="true" keyProperty="id">
+        insert into tb_worker_checkin
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="workerId != null">worker_id,</if>
+            <if test="roleId != null">role_id,</if>
+            <if test="checkType != null">check_type,</if>
+            <if test="checkTime != null">check_time,</if>
+            <if test="checkMethod != null">check_method,</if>
+            <if test="siteId != null">site_id,</if>
+            <if test="latitude != null">latitude,</if>
+            <if test="longitude != null">longitude,</if>
+            <if test="photoUrl != null">photo_url,</if>
+            <if test="aiResult != null">ai_result,</if>
+            <if test="helmetFlag != null">helmet_flag,</if>
+            <if test="vestFlag != null">vest_flag,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="workerId != null">#{workerId},</if>
+            <if test="roleId != null">#{roleId},</if>
+            <if test="checkType != null">#{checkType},</if>
+            <if test="checkTime != null">#{checkTime},</if>
+            <if test="checkMethod != null">#{checkMethod},</if>
+            <if test="siteId != null">#{siteId},</if>
+            <if test="latitude != null">#{latitude},</if>
+            <if test="longitude != null">#{longitude},</if>
+            <if test="photoUrl != null">#{photoUrl},</if>
+            <if test="aiResult != null">#{aiResult},</if>
+            <if test="helmetFlag != null">#{helmetFlag},</if>
+            <if test="vestFlag != null">#{vestFlag},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+
+    <update id="updateTbWorkerCheckin" parameterType="TbWorkerCheckin">
+        update tb_worker_checkin
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="workerId != null">worker_id = #{workerId},</if>
+            <if test="roleId != null">role_id = #{roleId},</if>
+            <if test="checkType != null">check_type = #{checkType},</if>
+            <if test="checkTime != null">check_time = #{checkTime},</if>
+            <if test="checkMethod != null">check_method = #{checkMethod},</if>
+            <if test="siteId != null">site_id = #{siteId},</if>
+            <if test="latitude != null">latitude = #{latitude},</if>
+            <if test="longitude != null">longitude = #{longitude},</if>
+            <if test="photoUrl != null">photo_url = #{photoUrl},</if>
+            <if test="aiResult != null">ai_result = #{aiResult},</if>
+            <if test="helmetFlag != null">helmet_flag = #{helmetFlag},</if>
+            <if test="vestFlag != null">vest_flag = #{vestFlag},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteTbWorkerCheckinById" parameterType="Long">
+        delete from tb_worker_checkin where id = #{id}
+    </delete>
+
+    <delete id="deleteTbWorkerCheckinByIds" parameterType="String">
+        delete from tb_worker_checkin where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">#{id}</foreach>
+    </delete>
+
+    <delete id="deleteTbWorkerCheckinByWorkerId" parameterType="Long">
+        delete from tb_worker_checkin where worker_id = #{workerId}
+    </delete>
+</mapper>

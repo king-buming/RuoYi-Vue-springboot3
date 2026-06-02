@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.TbWorkerAuditMapper">
+
+    <resultMap type="TbWorkerAudit" id="TbWorkerAuditResult">
+        <result property="id"    column="id"    />
+        <result property="bizType"    column="biz_type"    />
+        <result property="bizId"    column="biz_id"    />
+        <result property="workerId"    column="worker_id"    />
+        <result property="auditStatus"    column="audit_status"    />
+        <result property="auditOpinion"    column="audit_opinion"    />
+        <result property="auditor"    column="auditor"    />
+        <result property="auditTime"    column="audit_time"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="remark"    column="remark"    />
+    </resultMap>
+
+    <sql id="selectTbWorkerAuditVo">
+        select id, biz_type, biz_id, worker_id, audit_status, audit_opinion, auditor, audit_time, create_by, create_time, update_by, update_time, remark from tb_worker_audit
+    </sql>
+
+    <select id="selectTbWorkerAuditList" parameterType="TbWorkerAudit" resultMap="TbWorkerAuditResult">
+        <include refid="selectTbWorkerAuditVo"/>
+        <where>
+            <if test="bizType != null  and bizType != ''"> and biz_type = #{bizType}</if>
+            <if test="bizId != null "> and biz_id = #{bizId}</if>
+            <if test="workerId != null "> and worker_id = #{workerId}</if>
+            <if test="auditStatus != null  and auditStatus != ''"> and audit_status = #{auditStatus}</if>
+            <if test="auditor != null  and auditor != ''"> and auditor = #{auditor}</if>
+            <if test="auditTime != null "> and audit_time = #{auditTime}</if>
+        </where>
+    </select>
+
+    <select id="selectTbWorkerAuditById" parameterType="Long" resultMap="TbWorkerAuditResult">
+        <include refid="selectTbWorkerAuditVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertTbWorkerAudit" parameterType="TbWorkerAudit" useGeneratedKeys="true" keyProperty="id">
+        insert into tb_worker_audit
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="bizType != null">biz_type,</if>
+            <if test="bizId != null">biz_id,</if>
+            <if test="workerId != null">worker_id,</if>
+            <if test="auditStatus != null">audit_status,</if>
+            <if test="auditOpinion != null">audit_opinion,</if>
+            <if test="auditor != null">auditor,</if>
+            <if test="auditTime != null">audit_time,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="remark != null">remark,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="bizType != null">#{bizType},</if>
+            <if test="bizId != null">#{bizId},</if>
+            <if test="workerId != null">#{workerId},</if>
+            <if test="auditStatus != null">#{auditStatus},</if>
+            <if test="auditOpinion != null">#{auditOpinion},</if>
+            <if test="auditor != null">#{auditor},</if>
+            <if test="auditTime != null">#{auditTime},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="remark != null">#{remark},</if>
+         </trim>
+    </insert>
+
+    <update id="updateTbWorkerAudit" parameterType="TbWorkerAudit">
+        update tb_worker_audit
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="bizType != null">biz_type = #{bizType},</if>
+            <if test="bizId != null">biz_id = #{bizId},</if>
+            <if test="workerId != null">worker_id = #{workerId},</if>
+            <if test="auditStatus != null">audit_status = #{auditStatus},</if>
+            <if test="auditOpinion != null">audit_opinion = #{auditOpinion},</if>
+            <if test="auditor != null">auditor = #{auditor},</if>
+            <if test="auditTime != null">audit_time = #{auditTime},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteTbWorkerAuditById" parameterType="Long">
+        delete from tb_worker_audit where id = #{id}
+    </delete>
+
+    <delete id="deleteTbWorkerAuditByIds" parameterType="String">
+        delete from tb_worker_audit where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <delete id="deleteTbWorkerAuditByWorkerId" parameterType="Long">
+        delete from tb_worker_audit where worker_id = #{workerId}
+    </delete>
+</mapper>
