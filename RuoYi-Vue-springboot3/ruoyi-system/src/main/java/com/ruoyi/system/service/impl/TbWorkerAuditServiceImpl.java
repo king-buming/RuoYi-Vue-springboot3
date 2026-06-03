@@ -8,10 +8,12 @@ import org.springframework.transaction.annotation.Transactional;
 import com.ruoyi.system.mapper.TbWorkerAuditMapper;
 import com.ruoyi.system.mapper.TbWorkerCertMapper;
 import com.ruoyi.system.mapper.TbWorkerMapper;
+import com.ruoyi.system.mapper.TbWorkerRoleRelMapper;
 import com.ruoyi.system.domain.TbWorker;
 import com.ruoyi.system.domain.TbWorkerAudit;
 import com.ruoyi.system.domain.TbWorkerCert;
 import com.ruoyi.system.service.ITbWorkerAuditService;
+import com.ruoyi.system.service.ITbWorkerService;
 
 /**
  * 审核记录Service业务层处理（含审核驱动业务状态）
@@ -28,6 +30,10 @@ public class TbWorkerAuditServiceImpl implements ITbWorkerAuditService
     private TbWorkerMapper tbWorkerMapper;
     @Autowired
     private TbWorkerCertMapper tbWorkerCertMapper;
+    @Autowired
+    private TbWorkerRoleRelMapper roleRelMapper;
+    @Autowired
+    private ITbWorkerService workerService;
 
     @Override
     public TbWorkerAudit selectTbWorkerAuditById(Long id) {
@@ -46,9 +52,22 @@ public class TbWorkerAuditServiceImpl implements ITbWorkerAuditService
     @Transactional(rollbackFor = Exception.class)
     public int insertTbWorkerAudit(TbWorkerAudit a)
     {
-        // worker 类型审核：bizId 就是 workerId
         if ("worker".equals(a.getBizType()) && a.getWorkerId() != null) {
             a.setBizId(a.getWorkerId());
+        }
+        // 审核通过时：检查该人员所有角色需要的资质是否齐全且已通过
+        if ("worker".equals(a.getBizType()) && "1".equals(a.getAuditStatus()) && a.getBizId() != null) {
+            List<Long> roleIds = roleRelMapper.selectRoleIdsByWorkerId(a.getBizId());
+            List<String> missing = workerService.validateRoleRequirements(a.getBizId(), roleIds);
+            if (!missing.isEmpty()) {
+                a.setAuditStatus("0"); // 缺资质，降为待审核
+            } else {
+                // 资质齐全 → 同步该人员所有证书为已通过
+                TbWorkerCert qc = new TbWorkerCert(); qc.setWorkerId(a.getBizId());
+                tbWorkerCertMapper.selectTbWorkerCertList(qc).forEach(c -> {
+                    c.setAuditStatus("1"); tbWorkerCertMapper.updateTbWorkerCert(c);
+                });
+            }
         }
         a.setCreateTime(DateUtils.getNowDate());
         int rows = tbWorkerAuditMapper.insertTbWorkerAudit(a);
@@ -84,10 +103,7 @@ public class TbWorkerAuditServiceImpl implements ITbWorkerAuditService
         if (a.getBizId() == null) return;
         if ("worker".equals(a.getBizType())) {
             TbWorker w = tbWorkerMapper.selectTbWorkerById(a.getBizId());
-            if (w != null) {
-                w.setAuditStatus(a.getAuditStatus());
-                tbWorkerMapper.updateTbWorker(w);
-            }
+            if (w != null) { w.setAuditStatus(a.getAuditStatus()); tbWorkerMapper.updateTbWorker(w); }
         } else if ("cert".equals(a.getBizType())) {
             TbWorkerCert c = tbWorkerCertMapper.selectTbWorkerCertById(a.getBizId());
             if (c != null) {

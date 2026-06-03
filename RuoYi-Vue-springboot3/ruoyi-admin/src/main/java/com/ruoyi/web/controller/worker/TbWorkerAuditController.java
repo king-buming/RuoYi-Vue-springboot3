@@ -17,6 +17,7 @@ import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.system.domain.TbWorkerAudit;
+import com.ruoyi.system.mapper.TbWorkerRoleRelMapper;
 import com.ruoyi.system.service.ITbWorkerAuditService;
 import com.ruoyi.system.service.ITbWorkerService;
 import com.ruoyi.common.utils.poi.ExcelUtil;
@@ -36,6 +37,8 @@ public class TbWorkerAuditController extends BaseController
     private ITbWorkerAuditService tbWorkerAuditService;
     @Autowired
     private ITbWorkerService tbWorkerService;
+    @Autowired
+    private TbWorkerRoleRelMapper roleRelMapper;
 
     @PreAuthorize("@ss.hasPermi('worker:audit:list')")
     @GetMapping("/list")
@@ -68,7 +71,7 @@ public class TbWorkerAuditController extends BaseController
             return error("该人员已被归档，无法新增审核");
         }
         tbWorkerAuditService.insertTbWorkerAudit(tbWorkerAudit);
-        return success();
+        return buildResult(tbWorkerAudit);
     }
 
     /** 修改审核记录 → Service 层自动回写业务主表状态 */
@@ -80,7 +83,17 @@ public class TbWorkerAuditController extends BaseController
             return error("该人员已被归档，无法修改审核");
         }
         tbWorkerAuditService.updateTbWorkerAudit(tbWorkerAudit);
-        return success();
+        return buildResult(tbWorkerAudit);
+    }
+
+    private AjaxResult buildResult(TbWorkerAudit a) {
+        AjaxResult r = success();
+        if ("worker".equals(a.getBizType()) && a.getBizId() != null) {
+            java.util.List<Long> roleIds = roleRelMapper.selectRoleIdsByWorkerId(a.getBizId());
+            java.util.List<String> missing = tbWorkerService.validateRoleRequirements(a.getBizId(), roleIds);
+            if (!missing.isEmpty()) r.put("warnings", missing);
+        }
+        return r;
     }
 
     @PreAuthorize("@ss.hasPermi('worker:audit:remove')")

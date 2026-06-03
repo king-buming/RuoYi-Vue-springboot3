@@ -1,12 +1,6 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
-      <el-form-item label="业务类型" prop="bizType">
-        <el-select v-model="queryParams.bizType" placeholder="请选择" clearable>
-          <el-option label="人员" value="worker" />
-          <el-option label="资质" value="cert" />
-        </el-select>
-      </el-form-item>
       <el-form-item label="人员" prop="workerId">
         <el-select v-model="queryParams.workerId" placeholder="请选择人员" clearable filterable @change="handleQuery">
           <el-option
@@ -81,14 +75,6 @@
 
     <el-table v-loading="loading" :data="auditList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="业务类型" align="center" prop="bizType">
-        <template slot-scope="scope">
-          <span v-if="scope.row.bizType === 'worker'">人员</span>
-          <span v-else-if="scope.row.bizType === 'cert'">资质</span>
-          <span v-else>{{ scope.row.bizType }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="业务数据ID" align="center" prop="bizId" />
       <el-table-column label="关联人员" align="center" prop="workerId">
         <template slot-scope="scope">
           {{ workerName(scope.row.workerId) }} (ID:{{ scope.row.workerId }})
@@ -137,15 +123,6 @@
     <!-- 添加或修改审核记录对话框 -->
     <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
-        <el-form-item label="业务类型" prop="bizType">
-          <el-select v-model="form.bizType" placeholder="请选择业务类型">
-            <el-option label="人员" value="worker" />
-            <el-option label="资质" value="cert" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="业务数据ID" prop="bizId" v-if="form.bizType === 'cert'">
-          <el-input-number v-model="form.bizId" controls-position="right" :min="1" />
-        </el-form-item>
         <el-form-item label="关联人员" prop="workerId">
           <el-select v-model="form.workerId" placeholder="请选择人员" filterable>
             <el-option
@@ -155,6 +132,34 @@
               :value="w.id"
             />
           </el-select>
+        </el-form-item>
+        <!-- 展示人脸 -->
+        <el-form-item label="人脸照片" v-if="form.workerId">
+          <image-preview v-if="faceImg" :src="faceImg" :width="120" :height="120"/>
+          <span v-else style="color:#999;font-size:13px">该人员尚未录入人脸</span>
+        </el-form-item>
+        <!-- 展示身份证 -->
+        <el-form-item label="身份证照片" v-if="form.workerId">
+          <div style="display:flex;gap:8px;flex-wrap:wrap" v-if="idCardImgs.length">
+            <div v-for="(img,i) in idCardImgs" :key="i" style="text-align:center">
+              <image-preview :src="img.url" :width="120" :height="80"/>
+              <div style="font-size:12px;color:#999">{{ img.remark }}</div>
+            </div>
+          </div>
+          <span v-else style="color:#999;font-size:13px">该人员尚未上传身份证</span>
+        </el-form-item>
+        <!-- 资质证书列表 -->
+        <el-form-item label="资质证书" v-if="form.workerId && workerCerts.length">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <div v-for="c in workerCerts" :key="c.id" style="text-align:center;border:1px solid #eee;border-radius:8px;padding:8px">
+              <image-preview v-if="c.certImg" :src="c.certImg" :width="80" :height="55"/>
+              <div style="font-size:12px;margin-top:4px">{{ certName(c.certType) }}</div>
+            </div>
+          </div>
+        </el-form-item>
+        <el-form-item label="资质证书" v-if="form.workerId && !workerCerts.length">
+          <span v-if="workerNeedCerts" style="color:#ff9500;font-size:13px">⚠ 该人员尚未上传资质证书</span>
+          <span v-else style="color:#999;font-size:13px">该人员所属角色无需资质证书</span>
         </el-form-item>
         <el-form-item label="审核结果" prop="auditStatus">
           <el-select v-model="form.auditStatus" placeholder="请选择审核结果">
@@ -194,7 +199,8 @@
 
 <script>
 import { listAudit, getAudit, delAudit, addAudit, updateAudit } from "@/api/worker/audit"
-import { listWorkerOptions, listActiveWorkerOptions } from "@/api/worker/worker"
+import { listWorkerOptions, listActiveWorkerOptions, getWorkerCerts, getWorkerFaces, getWorkerRoles } from "@/api/worker/worker"
+import { listRole } from "@/api/worker/role"
 
 export default {
   name: "WorkerAudit",
@@ -222,16 +228,23 @@ export default {
       // 人员下拉选项
       workerOptions: [],
       activeOptions: [],
+      allRoles: [],
+      certMap: {},
+      certOptions: [],
+      selectedCertImg: '',
+      idCardImgs: [],
+      workerCerts: [],
+      workerNeedCerts: false,
+      faceImg: '',
       // 查询参数
       queryParams: {
         pageNum: 1,
         pageSize: 10,
-        bizType: undefined,
         workerId: undefined,
         auditStatus: undefined
       },
       // 表单参数
-      form: {},
+      form: { bizType: 'worker' },
       // 表单校验
       rules: {
         auditStatus: [
@@ -244,6 +257,28 @@ export default {
     this.getList()
     listWorkerOptions().then(r => { this.workerOptions = r.data })
     listActiveWorkerOptions().then(r => { this.activeOptions = r.data })
+    listRole({pageNum:1,pageSize:999}).then(r => { this.allRoles = r.rows || [] })
+    // 加载证件类型字典
+    fetch('http://localhost:8080/app/common/dicts?types=worker_cert_type').then(r=>r.json()).then(d=>{
+      if(d.code===200){(d.data['worker_cert_type']||[]).forEach(o=>{this.certMap[o.value]=o.label})}
+    })
+  },
+  watch: {
+    'form.workerId': function(id) {
+      this.selectedCertImg = ''; this.idCardImgs = []; this.faceImg = ''
+      if (!id) return
+      getWorkerFaces(id).then(r => { this.faceImg = r.data && r.data.length ? r.data[0].faceImgUrl : '' })
+      getWorkerRoles(id).then(r => {
+        const roleIds = r.data || []
+        this.workerNeedCerts = this.allRoles.some(rl => roleIds.includes(rl.id) && rl.needCert === '1')
+      })
+      getWorkerCerts(id).then(r => {
+        const all = r.data || []
+        this.idCardImgs = all.filter(c => c.certType === 'id_card' && c.certImg)
+          .map(c => ({url: c.certImg, remark: c.remark || ''}))
+        this.workerCerts = all.filter(c => c.certType !== 'id_card' && c.certImg)
+      })
+    }
   },
   activated() { this.getList(); listWorkerOptions().then(response => { this.workerOptions = response.data }) },
   methods: {
@@ -265,7 +300,7 @@ export default {
     reset() {
       this.form = {
         id: undefined,
-        bizType: undefined,
+        bizType: 'worker',
         bizId: undefined,
         workerId: undefined,
         auditStatus: undefined,
@@ -313,16 +348,16 @@ export default {
       this.$refs["form"].validate(valid => {
         if (valid) {
           if (this.form.id != undefined) {
-            updateAudit(this.form).then(() => {
+            updateAudit(this.form).then(res => {
               this.$modal.msgSuccess("修改成功")
-              this.open = false
-              this.getList()
+              if (res.warnings && res.warnings.length) this.$modal.msgWarning("缺少资质：" + res.warnings.join("；"))
+              this.open = false; this.getList()
             })
           } else {
-            addAudit(this.form).then(() => {
+            addAudit(this.form).then(res => {
               this.$modal.msgSuccess("新增成功")
-              this.open = false
-              this.getList()
+              if (res.warnings && res.warnings.length) this.$modal.msgWarning("缺少资质：" + res.warnings.join("；"))
+              this.open = false; this.getList()
             })
           }
         }
@@ -343,6 +378,11 @@ export default {
       const w = this.workerOptions.find(o => o.id === id)
       if (!w) return 'ID:' + (id || '')
       return w.delFlag === '2' ? w.workerName + '(已归档)' : w.workerName
+    },
+    certName(type) { return this.certMap[type] || type },
+    onCertSelect(id) {
+      const c = this.certOptions.find(o => o.id === id)
+      this.selectedCertImg = c ? c.certImg || '' : ''
     },
     handleExport() {
       this.download('worker/audit/export', {

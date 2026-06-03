@@ -228,10 +228,29 @@
       <template v-if="form.id">
         <el-divider content-position="left">关联数据</el-divider>
         <el-tabs type="border-card" size="small">
+          <el-tab-pane :label="'身份证 (' + relatedIdCards.length + ')'">
+            <el-table :data="relatedIdCards" size="small" max-height="180">
+              <el-table-column label="面" prop="remark" width="70">
+                <template slot-scope="s">{{ s.row.remark || '-' }}</template>
+              </el-table-column>
+              <el-table-column label="照片" prop="certImg" width="80">
+                <template slot-scope="s"><image-preview :src="s.row.certImg" :width="50" :height="35"/></template>
+              </el-table-column>
+              <el-table-column label="编号" prop="certNo" />
+              <el-table-column label="到期日" prop="expireDate" width="100" />
+              <el-table-column label="审核" prop="auditStatus">
+                <template slot-scope="s"><dict-tag :options="dict.type.worker_audit_status" :value="s.row.auditStatus"/></template>
+              </el-table-column>
+            </el-table>
+            <div v-if="relatedIdCards.length===0" style="color:#999;text-align:center;padding:10px">暂无</div>
+          </el-tab-pane>
           <el-tab-pane :label="'资质证件 (' + relatedCerts.length + ')'">
             <el-table :data="relatedCerts" size="small" max-height="180">
               <el-table-column label="类型" prop="certType">
                 <template slot-scope="s"><dict-tag :options="dict.type.worker_cert_type" :value="s.row.certType"/></template>
+              </el-table-column>
+              <el-table-column label="照片" prop="certImg" width="80">
+                <template slot-scope="s"><image-preview :src="s.row.certImg" :width="50" :height="35"/></template>
               </el-table-column>
               <el-table-column label="编号" prop="certNo" />
               <el-table-column label="到期日" prop="expireDate" width="100" />
@@ -324,6 +343,7 @@ export default {
       // 角色映射 { workerId: [roleName, ...] }
       roleMap: {},
       // 关联数据（编辑时加载）
+      relatedIdCards: [],
       relatedCerts: [],
       relatedFaces: [],
       relatedAudits: [],
@@ -396,6 +416,7 @@ export default {
         remark: undefined
       }
       this.roleIds = []
+      this.relatedIdCards = []
       this.relatedCerts = []
       this.relatedFaces = []
       this.relatedAudits = []
@@ -441,7 +462,11 @@ export default {
           this.roleIds = res.data
         })
         // 加载关联数据
-        getWorkerCerts(id).then(res => { this.relatedCerts = res.data })
+        getWorkerCerts(id).then(res => {
+          const all = res.data || []
+          this.relatedIdCards = all.filter(c => c.certType === 'id_card')
+          this.relatedCerts = all.filter(c => c.certType !== 'id_card')
+        })
         getWorkerFaces(id).then(res => { this.relatedFaces = res.data })
         getWorkerAudits(id).then(res => { this.relatedAudits = res.data })
         this.open = true

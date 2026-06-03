@@ -82,6 +82,8 @@ public class AppWorkerController
         Long id = AppTokenUtil.getWorkerId(req);
         TbWorkerFace q = new TbWorkerFace(); q.setWorkerId(id);
         List<TbWorkerFace> list = faceMapper.selectTbWorkerFaceList(q);
-        return AjaxResult.success(list.isEmpty() ? null : list.get(0));
+        // 始终返回 data 对象，前端判断 faceImgUrl 字段
+        TbWorkerFace f = list.isEmpty() ? new TbWorkerFace() : list.get(0);
+        return AjaxResult.success(f);
     }
 }

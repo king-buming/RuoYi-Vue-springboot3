@@ -54,12 +54,11 @@ public class TbWorkerServiceImpl implements ITbWorkerService
         List<String> missing = new ArrayList<>();
         if (roleIds == null || roleIds.isEmpty()) return missing;
 
-        // 1) 加载该人员的有效证件（仅已通过+未过期）
+        // 1) 加载该人员的有效证件（存在且未过期即可，不要求已审核通过）
         TbWorkerCert qc = new TbWorkerCert(); qc.setWorkerId(workerId);
         List<TbWorkerCert> certs = tbWorkerCertMapper.selectTbWorkerCertList(qc);
         Date now = new Date();
         List<TbWorkerCert> validCerts = certs.stream()
-            .filter(c -> "1".equals(c.getAuditStatus()))                  // 已通过
             .filter(c -> c.getExpireDate() == null || c.getExpireDate().after(now)) // 未过期
             .collect(java.util.stream.Collectors.toList());
 

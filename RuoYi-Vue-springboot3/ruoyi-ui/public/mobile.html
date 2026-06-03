@@ -119,9 +119,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f5f5f5;
   <div class="section-title">人脸信息</div>
   <div id="faceStatus" style="text-align:center;padding:16px;background:#fff;border-radius:12px;margin-bottom:16px;font-size:14px;color:#999">加载中...</div>
   <button class="btn" onclick="showPage('face')" style="margin-bottom:16px">📷 上传人脸照片</button>
+  <div class="section-title">身份证</div>
+  <div id="idcardList"></div>
+  <div class="empty" id="noIdcards" style="display:none">暂无</div>
   <div class="section-title">我的资质</div>
   <div id="certList"></div>
-  <div class="empty" id="noCerts" style="display:none">暂无资质记录</div>
+  <div class="empty" id="noCerts" style="display:none">暂无</div>
   <div class="btn-row" style="margin-top:16px">
     <button class="btn" onclick="showPage('idcard')">📷 上传身份证</button>
     <button class="btn" onclick="showPage('cert')">📄 上传资质</button>
@@ -163,13 +166,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f5f5f5;
   </div>
   <div class="form-box">
     <label>证件类型</label>
-    <select id="certType">
-      <option value="safe_cert">安全员证</option>
-      <option value="electric_cert">电工证</option>
-      <option value="supervisor_cert">监理证</option>
-      <option value="guardian_cert">作业监护证</option>
-      <option value="insurance">保险</option>
-    </select>
+    <select id="certType"></select>
     <label>证件编号</label><input id="certNo" type="text" placeholder="请输入证件编号">
     <label>发证日期</label><input id="issueDate" type="date">
     <label>过期日期</label><input id="expireDate" type="date">
@@ -195,7 +192,15 @@ function api(path,opt={}){
 }
 const p=n=>n<10?'0'+n:''+n;
 const auditLabels={0:['待审核','warn'],1:['已通过','ok'],2:['已驳回','err'],3:['已过期','err']};
-const certNames={id_card:'身份证',safe_cert:'安全员证',electric_cert:'电工证',supervisor_cert:'监理证',guardian_cert:'作业监护证',insurance:'保险'};
+let certMap={}; // 动态加载
+let certOptions=[]; // 证件类型下拉选项
+function certName(code){return certMap[code]||code}
+// 加载字典
+(async function(){
+  try{const r=await fetch(API+'/app/common/dicts?types=worker_cert_type');const d=await r.json();
+  if(d.code===200){(d.data['worker_cert_type']||[]).forEach(function(o){certMap[o.value]=o.label})}
+  }catch(e){}
+})();
 
 let clockTimer=null;
 function showTab(name){
@@ -208,9 +213,16 @@ function showTab(name){
   if(name==='checkin'){refreshCheckin();updateClock();clockTimer=setInterval(updateClock,1000)}
   if(name==='records')loadRecords()
   if(name==='me')loadProfile()
+  if(name==='cert')initCertDropdown()
 }
 
 function showPage(name){ showTab(name) }
+function initCertDropdown(){
+  const sel=document.getElementById('certType');if(!sel)return;
+  sel.innerHTML='<option value="">请选择证件类型</option>';
+  const list=Object.entries(certMap).filter(([k])=>k!=='id_card');
+  list.forEach(([v,l])=>{sel.innerHTML+='<option value="'+v+'">'+l+'</option>'})
+}
 
 async function uploadImg(file){
   const fd=new FormData();fd.append('file',file)
@@ -316,26 +328,34 @@ async function loadProfile(){
         '<div class="row"><span class="label">单位类型</span><span class="value">'+(unitLabels[w.unitType]||w.unitType)+'</span></div>'+
         '<div class="row"><span class="label">审核状态</span><span class="value"><span class="badge '+cls+'">'+a+'</span></span></div>'+
         '<div class="row"><span class="label">人脸录入</span><span class="value">'+(w.faceStatus==='1'?'已录入':'未录入')+'</span></div>';
+      document.getElementById('faceStatus').innerHTML=(w.faceStatus==='1'
+        ?'<span style="color:#34c759">✅ 已录入人脸</span>'
+        :'<span style="color:#ff9500">⚠ 未录入人脸</span>');
     }
   }catch(e){}
   // load certs
   try{
     const r=await api('/app/worker/certs');const d=await r.json();
-    const list=d.data||[];const el=document.getElementById('certList');
-    if(!list.length){document.getElementById('noCerts').style.display='block';el.innerHTML='';return}
-    document.getElementById('noCerts').style.display='none';
-    el.innerHTML=list.map(c=>{
+    const all=d.data||[];
+    const idcards=all.filter(c=>c.certType==='id_card');
+    const certs=all.filter(c=>c.certType!=='id_card');
+
+    // 身份证列表
+    const icEl=document.getElementById('idcardList');
+    if(!idcards.length){document.getElementById('noIdcards').style.display='block';icEl.innerHTML=''}
+    else{document.getElementById('noIdcards').style.display='none';icEl.innerHTML=idcards.map(c=>{
       const[a,cls]=auditLabels[c.auditStatus]||[c.auditStatus,''];
-      const sideLabel=c.certType==='id_card'&&c.remark?' ('+c.remark+')':'';
-      return '<div class="cert-item"><div><div class="cname">'+(certNames[c.certType]||c.certType)+sideLabel+'</div><div class="cno">编号: '+(c.certNo||'-')+'</div><div class="cexpire">到期: '+(c.expireDate||'-')+'</div></div><span class="badge '+cls+'">'+a+'</span></div>'
-    }).join('')
-  }catch(e){}
-  try{
-    const r=await api('/app/worker/face');const d=await r.json();
-    const face=d.data;
-    document.getElementById('faceStatus').innerHTML=face&&face.faceImgUrl
-      ?'<span style="color:#34c759">✅ 已录入人脸</span>'
-      :'<span style="color:#ff9500">⚠ 未录入人脸</span>';
+      const side=c.remark||'';
+      return '<div class="cert-item"><div style="display:flex;align-items:center;gap:10px">'+(c.certImg?'<img src="'+c.certImg+'" style="width:50px;height:35px;object-fit:cover;border-radius:4px">':'')+'<div><div class="cname">'+(side?side:'身份证')+'</div><div class="cno">编号: '+(c.certNo||'-')+'</div><div class="cexpire">到期: '+(c.expireDate||'-')+'</div></div></div><span class="badge '+cls+'">'+a+'</span></div>'
+    }).join('')}
+
+    // 资质列表
+    const el=document.getElementById('certList');
+    if(!certs.length){document.getElementById('noCerts').style.display='block';el.innerHTML=''}
+    else{document.getElementById('noCerts').style.display='none';el.innerHTML=certs.map(c=>{
+      const[a,cls]=auditLabels[c.auditStatus]||[c.auditStatus,''];
+      return '<div class="cert-item"><div style="display:flex;align-items:center;gap:10px">'+(c.certImg?'<img src="'+c.certImg+'" style="width:50px;height:35px;object-fit:cover;border-radius:4px">':'')+'<div><div class="cname">'+(certName(c.certType)||c.certType)+'</div><div class="cno">编号: '+(c.certNo||'-')+'</div><div class="cexpire">到期: '+(c.expireDate||'-')+'</div></div></div><span class="badge '+cls+'">'+a+'</span></div>'
+    }).join('')}
   }catch(e){}
 }
 
