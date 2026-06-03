@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.AiModelMapper">
+
+    <resultMap type="AiModel" id="AiModelResult">
+        <id     property="modelId"       column="model_id"              />
+        <result property="modelName"     column="model_name"            />
+        <result property="modelType"     column="model_type"            />
+        <result property="modelCode"     column="model_code"            />
+        <result property="version"       column="version"               />
+        <result property="framework"     column="framework"             />
+        <result property="modelPath"     column="model_path"            />
+        <result property="configJson"    column="config_json"           />
+        <result property="metrics"       column="metrics"               />
+        <result property="inputFormat"   column="input_format"          />
+        <result property="outputFormat"  column="output_format"         />
+        <result property="provider"      column="provider"              />
+        <result property="thumbnail"     column="thumbnail"             />
+        <result property="status"        column="status"                />
+        <result property="description"   column="description"           />
+        <result property="createBy"      column="create_by"             />
+        <result property="createTime"    column="create_time"           />
+        <result property="updateBy"      column="update_by"             />
+        <result property="updateTime"    column="update_time"           />
+        <result property="remark"        column="remark"                />
+    </resultMap>
+
+    <sql id="selectAiModelVo">
+        select model_id, model_name, model_type, model_code, version, framework,
+               model_path, config_json, metrics, input_format, output_format,
+               provider, thumbnail, status, description,
+               create_by, create_time, update_by, update_time, remark
+        from ai_model
+    </sql>
+
+    <select id="selectAiModelList" parameterType="AiModel" resultMap="AiModelResult">
+        <include refid="selectAiModelVo"/>
+        <where>
+            <if test="modelName != null and modelName != ''">
+                AND model_name like concat('%', #{modelName}, '%')
+            </if>
+            <if test="modelType != null and modelType != ''">
+                AND model_type = #{modelType}
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+            <if test="framework != null and framework != ''">
+                AND framework = #{framework}
+            </if>
+            <if test="params.beginTime != null and params.beginTime != ''">
+                AND create_time &gt;= #{params.beginTime}
+            </if>
+            <if test="params.endTime != null and params.endTime != ''">
+                AND create_time &lt;= #{params.endTime}
+            </if>
+        </where>
+        order by create_time desc
+    </select>
+
+    <select id="selectAiModelById" parameterType="Long" resultMap="AiModelResult">
+        <include refid="selectAiModelVo"/>
+        where model_id = #{modelId}
+    </select>
+
+    <select id="selectAiModelByCode" parameterType="String" resultMap="AiModelResult">
+        <include refid="selectAiModelVo"/>
+        where model_code = #{modelCode}
+    </select>
+
+    <insert id="insertAiModel" parameterType="AiModel" useGeneratedKeys="true" keyProperty="modelId">
+        insert into ai_model(
+            <if test="modelName != null and modelName != ''">model_name,</if>
+            <if test="modelType != null and modelType != ''">model_type,</if>
+            <if test="modelCode != null and modelCode != ''">model_code,</if>
+            <if test="version != null and version != ''">version,</if>
+            <if test="framework != null and framework != ''">framework,</if>
+            <if test="modelPath != null and modelPath != ''">model_path,</if>
+            <if test="configJson != null">config_json,</if>
+            <if test="metrics != null">metrics,</if>
+            <if test="inputFormat != null and inputFormat != ''">input_format,</if>
+            <if test="outputFormat != null and outputFormat != ''">output_format,</if>
+            <if test="provider != null and provider != ''">provider,</if>
+            <if test="thumbnail != null and thumbnail != ''">thumbnail,</if>
+            <if test="status != null and status != ''">status,</if>
+            <if test="description != null and description != ''">description,</if>
+            <if test="createBy != null and createBy != ''">create_by,</if>
+            create_time
+        )values(
+            <if test="modelName != null and modelName != ''">#{modelName},</if>
+            <if test="modelType != null and modelType != ''">#{modelType},</if>
+            <if test="modelCode != null and modelCode != ''">#{modelCode},</if>
+            <if test="version != null and version != ''">#{version},</if>
+            <if test="framework != null and framework != ''">#{framework},</if>
+            <if test="modelPath != null and modelPath != ''">#{modelPath},</if>
+            <if test="configJson != null">#{configJson},</if>
+            <if test="metrics != null">#{metrics},</if>
+            <if test="inputFormat != null and inputFormat != ''">#{inputFormat},</if>
+            <if test="outputFormat != null and outputFormat != ''">#{outputFormat},</if>
+            <if test="provider != null and provider != ''">#{provider},</if>
+            <if test="thumbnail != null and thumbnail != ''">#{thumbnail},</if>
+            <if test="status != null and status != ''">#{status},</if>
+            <if test="description != null and description != ''">#{description},</if>
+            <if test="createBy != null and createBy != ''">#{createBy},</if>
+            sysdate()
+        )
+    </insert>
+
+    <update id="updateAiModel" parameterType="AiModel">
+        update ai_model
+        <set>
+            <if test="modelName != null and modelName != ''">model_name = #{modelName},</if>
+            <if test="modelType != null and modelType != ''">model_type = #{modelType},</if>
+            <if test="modelCode != null and modelCode != ''">model_code = #{modelCode},</if>
+            <if test="version != null and version != ''">version = #{version},</if>
+            <if test="framework != null and framework != ''">framework = #{framework},</if>
+            <if test="modelPath != null and modelPath != ''">model_path = #{modelPath},</if>
+            <if test="configJson != null">config_json = #{configJson},</if>
+            <if test="metrics != null">metrics = #{metrics},</if>
+            <if test="inputFormat != null and inputFormat != ''">input_format = #{inputFormat},</if>
+            <if test="outputFormat != null and outputFormat != ''">output_format = #{outputFormat},</if>
+            <if test="provider != null and provider != ''">provider = #{provider},</if>
+            <if test="thumbnail != null and thumbnail != ''">thumbnail = #{thumbnail},</if>
+            <if test="status != null and status != ''">status = #{status},</if>
+            <if test="description != null and description != ''">description = #{description},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </set>
+        where model_id = #{modelId}
+    </update>
+
+    <delete id="deleteAiModelById" parameterType="Long">
+        delete from ai_model where model_id = #{modelId}
+    </delete>
+
+    <delete id="deleteAiModelByIds" parameterType="Long">
+        delete from ai_model where model_id in
+        <foreach collection="array" item="modelId" open="(" separator="," close=")">
+            #{modelId}
+        </foreach>
+    </delete>
+
+</mapper>

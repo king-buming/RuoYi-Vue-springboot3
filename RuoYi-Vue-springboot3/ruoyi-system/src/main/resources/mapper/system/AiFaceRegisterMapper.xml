@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.AiFaceRegisterMapper">
+
+    <resultMap type="AiFaceRegister" id="AiFaceRegisterResult">
+        <id     property="registerId"     column="register_id"              />
+        <result property="workerId"       column="worker_id"                />
+        <result property="workerName"     column="worker_name"              />
+        <result property="faceImgUrl"     column="face_img_url"             />
+        <result property="faceFeature"    column="face_feature"             />
+        <result property="modelCode"      column="model_code"               />
+        <result property="modelName"      column="model_name"               />
+        <result property="registerStatus" column="register_status"          />
+        <result property="registerTime"   column="register_time"            />
+        <result property="failReason"     column="fail_reason"              />
+        <result property="createBy"       column="create_by"                />
+        <result property="createTime"     column="create_time"              />
+        <result property="updateBy"       column="update_by"                />
+        <result property="updateTime"     column="update_time"              />
+        <result property="remark"         column="remark"                   />
+        <!-- tb_worker_face 联表字段 -->
+        <result property="collectTime"    column="collect_time"             />
+        <result property="faceStatus"     column="face_status"              />
+    </resultMap>
+
+    <!-- 三表 LEFT JOIN：tb_worker + tb_worker_face + ai_face_register -->
+    <select id="selectFaceRegisterList" resultMap="AiFaceRegisterResult">
+        SELECT
+            w.id           AS worker_id,
+            w.worker_name,
+            w.face_status,
+            wf.face_img_url,
+            wf.collect_time,
+            afr.register_id,
+            afr.face_feature,
+            afr.model_code,
+            afr.model_name,
+            afr.register_status,
+            afr.register_time,
+            afr.fail_reason
+        FROM tb_worker w
+        LEFT JOIN tb_worker_face wf ON w.id = wf.worker_id
+        LEFT JOIN ai_face_register afr ON w.id = afr.worker_id
+        WHERE w.del_flag = '0'
+        <if test="workerName != null and workerName != ''">
+            AND w.worker_name LIKE CONCAT('%', #{workerName}, '%')
+        </if>
+        <if test="registerStatus != null and registerStatus != ''">
+            AND (afr.register_status = #{registerStatus}
+                 OR (afr.register_status IS NULL AND #{registerStatus} = '0'))
+        </if>
+        ORDER BY w.id ASC
+    </select>
+
+    <select id="selectFaceRegisterById" parameterType="Long" resultMap="AiFaceRegisterResult">
+        SELECT
+            w.id           AS worker_id,
+            w.worker_name,
+            w.face_status,
+            wf.face_img_url,
+            wf.collect_time,
+            afr.register_id,
+            afr.face_feature,
+            afr.model_code,
+            afr.model_name,
+            afr.register_status,
+            afr.register_time,
+            afr.fail_reason
+        FROM ai_face_register afr
+        LEFT JOIN tb_worker w ON afr.worker_id = w.id
+        LEFT JOIN tb_worker_face wf ON w.id = wf.worker_id
+        WHERE afr.register_id = #{registerId}
+    </select>
+
+    <select id="selectByWorkerIdAndModelCode" resultMap="AiFaceRegisterResult">
+        SELECT
+            w.id           AS worker_id,
+            w.worker_name,
+            w.face_status,
+            wf.face_img_url,
+            wf.collect_time,
+            afr.register_id,
+            afr.face_feature,
+            afr.model_code,
+            afr.model_name,
+            afr.register_status,
+            afr.register_time,
+            afr.fail_reason
+        FROM ai_face_register afr
+        LEFT JOIN tb_worker w ON afr.worker_id = w.id
+        LEFT JOIN tb_worker_face wf ON w.id = wf.worker_id
+        WHERE afr.worker_id = #{workerId} AND afr.model_code = #{modelCode}
+    </select>
+
+    <insert id="insertAiFaceRegister" parameterType="AiFaceRegister" useGeneratedKeys="true" keyProperty="registerId">
+        insert into ai_face_register(
+            <if test="workerId != null">worker_id,</if>
+            <if test="workerName != null and workerName != ''">worker_name,</if>
+            <if test="faceImgUrl != null and faceImgUrl != ''">face_img_url,</if>
+            <if test="faceFeature != null">face_feature,</if>
+            <if test="modelCode != null and modelCode != ''">model_code,</if>
+            <if test="modelName != null and modelName != ''">model_name,</if>
+            <if test="registerStatus != null and registerStatus != ''">register_status,</if>
+            <if test="registerTime != null">register_time,</if>
+            <if test="failReason != null and failReason != ''">fail_reason,</if>
+            <if test="createBy != null and createBy != ''">create_by,</if>
+            create_time
+        )values(
+            <if test="workerId != null">#{workerId},</if>
+            <if test="workerName != null and workerName != ''">#{workerName},</if>
+            <if test="faceImgUrl != null and faceImgUrl != ''">#{faceImgUrl},</if>
+            <if test="faceFeature != null">#{faceFeature},</if>
+            <if test="modelCode != null and modelCode != ''">#{modelCode},</if>
+            <if test="modelName != null and modelName != ''">#{modelName},</if>
+            <if test="registerStatus != null and registerStatus != ''">#{registerStatus},</if>
+            <if test="registerTime != null">#{registerTime},</if>
+            <if test="failReason != null and failReason != ''">#{failReason},</if>
+            <if test="createBy != null and createBy != ''">#{createBy},</if>
+            sysdate()
+        )
+    </insert>
+
+    <update id="updateAiFaceRegister" parameterType="AiFaceRegister">
+        update ai_face_register
+        <set>
+            <if test="workerName != null and workerName != ''">worker_name = #{workerName},</if>
+            <if test="faceImgUrl != null and faceImgUrl != ''">face_img_url = #{faceImgUrl},</if>
+            <if test="faceFeature != null">face_feature = #{faceFeature},</if>
+            <if test="modelCode != null and modelCode != ''">model_code = #{modelCode},</if>
+            <if test="modelName != null and modelName != ''">model_name = #{modelName},</if>
+            <if test="registerStatus != null and registerStatus != ''">register_status = #{registerStatus},</if>
+            <if test="registerTime != null">register_time = #{registerTime},</if>
+            <if test="failReason != null">fail_reason = #{failReason},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </set>
+        where register_id = #{registerId}
+    </update>
+
+    <delete id="deleteAiFaceRegisterById" parameterType="Long">
+        delete from ai_face_register where register_id = #{registerId}
+    </delete>
+
+    <delete id="deleteAiFaceRegisterByIds" parameterType="Long">
+        delete from ai_face_register where register_id in
+        <foreach collection="array" item="registerId" open="(" separator="," close=")">
+            #{registerId}
+        </foreach>
+    </delete>
+
+</mapper>
