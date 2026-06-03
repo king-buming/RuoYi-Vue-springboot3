@@ -86,7 +86,7 @@ export default {
 }
 </script>
 
-<style scoped>
+<style>
 .container { padding: 30rpx; min-height: 100vh; background: #f5f5f5; }
 .user-bar { display: flex; justify-content: space-between; align-items: center; padding: 20rpx; background: #fff; border-radius: 12rpx; margin-bottom: 30rpx; }
 .name { font-size: 36rpx; font-weight: bold; }

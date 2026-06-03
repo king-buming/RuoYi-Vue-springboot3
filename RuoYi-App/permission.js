@@ -7,7 +7,9 @@ const loginPage = "/pages/login"
 
 // 白名单：无需登录即可访问
 const whiteList = [
-  '/pages/worker/login', '/pages/login', '/pages/register', '/pages/common/webview/index'
+  '/pages/worker/login', '/pages/login', '/pages/register', '/pages/common/webview/index',
+  '/pages/worker/checkin', '/pages/worker/records', '/pages/worker/mine',
+  '/pages/worker/idcard', '/pages/worker/upload', '/pages/worker/face'
 ]
 
 function needAuth(url) {
