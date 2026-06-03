@@ -75,9 +75,17 @@ npm run build:prod    # 生产构建
 | ry | 123456 | 普通用户 |
 | ruoyi | 123456 | Druid 监控面板（访问 `/druid/`） |
 
-### Git 代理
+### Git 代理与 SSL
 
-项目已配置 HTTP 代理 `127.0.0.1:7897`。
+项目已配置 HTTP 代理 `127.0.0.1:7897`。推送/拉取时如遇到 `schannel: failed to receive handshake` 错误，使用 openssl 后端：
+
+```bash
+# 拉取
+git -c http.sslBackend=openssl fetch origin <branch>
+
+# 推送（如 openssl 仍报 TLS 错误，关闭 SSL 校验）
+git -c http.sslVerify=false push -u origin <branch>
+```
 
 ---
 
@@ -107,8 +115,10 @@ ruoyi-generator    [代码生成] Controller 在 /tool/gen，基于 Velocity 模
 
 ### SQL 初始化
 
-- `sql/ry_20260417.sql` — 系统核心表 + 作业管理模块表（hw_plan/hw_attendance/hw_plan_worker/hw_plan_video）+ 人员信息管理模块表（tb_worker系列）
+- `sql/ry_20260417.sql` — 系统核心表 + 作业管理模块表（hw_plan/hw_attendance/hw_plan_worker/hw_plan_video）+ 人员信息管理模块表（tb_worker系列7张表）+ 菜单权限 + 字典数据
 - `sql/quartz.sql` — 定时任务表
+- `sql/test_data_0603.sql` — 人员管理+作业管理测试数据（8人、9角色、3计划、6打卡记录）
+- `sql/updates/` — 结构化数据库迁移脚本（按时间戳命名，同伴 git pull 后按序执行）
 
 ---
 
@@ -264,3 +274,85 @@ Controller 的 checkIn/checkOut 方法**不应该**加 `@Validated`，因为 `ch
 
 - `IFaceRecognitionService` / `StubFaceRecognitionService` — 人脸识别（返回 `fail("AI人脸识别服务尚未配置")`）
 - `IWechatCheckInService` / `StubWechatCheckInService` — 微信打卡（含 Haversine GPS 距离校验，地球半径 6371000m）
+
+---
+
+## 人员信息管理模块（worker）
+
+独立顶级模块，是作业管理模块的人员数据底座。**作业管理不再自带人员管理，所有人员数据统一从此模块获取。**
+
+### 数据库表（7张 tb_worker 系列）
+
+| 表名 | 说明 | 关键字段 |
+|------|------|---------|
+| `tb_worker` | 人员基础档案（核心） | id, worker_name, phone, id_card, gender, dept_id, status(0在场/1离场/2禁用), face_status, audit_status, unit_type(1管网/2第三方/3施工方), del_flag |
+| `tb_worker_role` | 角色规则 | role_code, role_name, need_sign_in/out, need_hourly_check, hourly_interval, need_cert, cert_type |
+| `tb_worker_role_rel` | 人员-角色多对多 | worker_id, role_id（UNIQUE约束） |
+| `tb_worker_cert` | 资质证件 | cert_type, cert_no, issue_date/expire_date, cert_img, audit_status |
+| `tb_worker_face` | 人脸信息 | worker_id, face_img_url, face_feature（TEXT，AI预留） |
+| `tb_worker_audit` | 审核记录 | biz_type(worker/cert), biz_id, audit_status, audit_opinion |
+| `tb_worker_checkin` | 打卡记录 | check_type(1签到/2签退/3点到), check_method, latitude/longitude, photo_url, helmet_flag, vest_flag |
+
+### 关键业务规则
+
+- **审核回写**：新增/修改审核记录时，自动同步对应主表的 `audit_status` 字段（事务保证）
+- **逻辑删除**：`delFlag='2'` + `status='2'`（同时禁用），保留历史数据
+- **弱约束资质校验**：角色分配时校验资质需求，缺失时人员标记为"待审核"并返回提示，但不阻断分配
+- **主键映射**：`tb_worker.id` 是人员唯一标识，`hw_plan_worker.worker_id` 和 `hw_attendance.user_id` 都关联此字段
+
+### 后端路径
+
+```
+ruoyi-admin/.../controller/worker/   ← 6 个管理后台 Controller（TbWorker/TbWorkerRole/TbWorkerCert/TbWorkerFace/TbWorkerAudit/TbWorkerCheckin）
+ruoyi-admin/.../controller/app/      ← 4 个移动端 Controller（AppAuth/AppWorker/AppCheckin/AppTokenUtil）
+ruoyi-system/.../domain/             ← 6 个实体类
+ruoyi-system/.../mapper/             ← 7 个 Mapper 接口
+ruoyi-system/.../service/            ← 6 组 Service 接口+实现
+ruoyi-system/.../resources/mapper/system/  ← 7 个 MyBatis XML
+```
+
+### 前端路径
+
+```
+ruoyi-ui/src/views/worker/   ← 6 个子页面（worker/role/cert/face/audit/checkin）
+ruoyi-ui/src/api/worker/     ← 6 个 API 模块
+```
+
+### 菜单权限前缀
+
+`worker:worker:*`、`worker:role:*`、`worker:cert:*`、`worker:face:*`、`worker:audit:*`、`worker:checkin:*`
+
+---
+
+## RuoYi-App（uni-app 移动端）
+
+基于 uni-app 的工人端 H5/App，位于项目根目录 `RuoYi-App/`。
+
+### 页面结构
+
+```
+pages/worker/
+├── login.vue       # 手机号+身份证后6位登录
+├── profile.vue     # 人员档案首页
+├── checkin.vue     # 签到/签退打卡
+├── records.vue     # 历史打卡记录
+├── certs.vue       # 资质证件查看
+├── face.vue        # 人脸采集上传
+├── idcard.vue      # 身份证上传
+├── upload.vue      # 通用文件上传
+└── mine.vue        # 我的（个人信息+资质+设置）
+```
+
+### 配置
+
+- API 地址在 `config.js` 的 `baseUrl`（默认 `http://localhost:8080`）
+- 使用 HMAC-SHA256 Token 鉴权（`AppTokenUtil`），7天有效期，独立于 Spring Security JWT
+- `/app/**` 接口在 `SecurityConfig` 中已放行，使用 `AppTokenFilter` 独立鉴权
+
+### 构建与同步
+
+uni-app 通过 HBuilderX 编译为 H5，产出覆盖到 `ruoyi-ui/public/mobile.html`。开发时在 HBuilderX 中编辑 `RuoYi-App/` 目录，完成后运行：
+
+```bash
+./sync-uni.sh   # 将 HBuilderX 改动同步回 git 仓库
+```
