@@ -20,8 +20,8 @@
         this.globalData.config = config
       },
       checkLogin() {
-        if (!getToken()) {
-          this.$tab.reLaunch('/pages/login') 
+        if (!getToken() && !uni.getStorageSync('appToken')) {
+          this.$tab.reLaunch('/pages/worker/login')
         }
       }
     }
