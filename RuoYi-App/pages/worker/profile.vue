@@ -36,7 +36,7 @@ export default {
 }
 </script>
 
-<style scoped>
+<style>
 .container { padding: 20rpx; min-height: 100vh; background: #f5f5f5; }
 .top-bar { background: #fff; border-radius: 12rpx; padding: 20rpx; margin-bottom: 16rpx; }
 .name { font-size: 36rpx; font-weight: bold; }

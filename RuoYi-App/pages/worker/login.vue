@@ -47,7 +47,7 @@ export default {
 }
 </script>
 
-<style scoped>
+<style>
 .container { padding: 60rpx 40rpx; min-height: 100vh; background: #f5f5f5; }
 .header { text-align: center; margin-bottom: 60rpx; }
 .title { font-size: 48rpx; font-weight: bold; color: #333; display: block; }
@@ -55,7 +55,7 @@ export default {
 .form { background: #fff; border-radius: 16rpx; padding: 40rpx; }
 .input-group { margin-bottom: 30rpx; }
 .label { font-size: 28rpx; color: #666; display: block; margin-bottom: 10rpx; }
-.input-group input { border: 1px solid #e5e5e5; border-radius: 8rpx; padding: 20rpx; font-size: 30rpx; }
+.input-group input { width: 100%; box-sizing: border-box; border: 1px solid #e5e5e5; border-radius: 8rpx; padding: 20rpx; font-size: 30rpx; min-height: 60rpx; }
 .btn { background: #007aff; color: #fff; border-radius: 8rpx; margin-top: 20rpx; font-size: 32rpx; }
 .tip { text-align: center; color: #ccc; font-size: 24rpx; margin-top: 30rpx; }
 </style>

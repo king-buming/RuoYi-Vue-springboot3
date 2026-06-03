@@ -38,7 +38,7 @@ export default {
 }
 </script>
 
-<style scoped>
+<style>
 .container { padding: 20rpx; min-height: 100vh; background: #f5f5f5; }
 .item { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 24rpx; border-radius: 12rpx; margin-bottom: 16rpx; }
 .type-tag { font-size: 24rpx; color: #fff; padding: 6rpx 16rpx; border-radius: 6rpx; }
