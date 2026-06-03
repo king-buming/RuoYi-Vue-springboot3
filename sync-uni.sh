@@ -6,3 +6,4 @@ cp /mnt/c/Users/1/Desktop/RuoYi-App/App.vue /home/zzz/project/RuoYi-Vue-springbo
 cp /mnt/c/Users/1/Desktop/RuoYi-App/utils/*.js /home/zzz/project/RuoYi-Vue-springboot3/RuoYi-App/utils/
 cp /mnt/c/Users/1/Desktop/RuoYi-App/permission.js /home/zzz/project/RuoYi-Vue-springboot3/RuoYi-App/permission.js
 echo "✅ uni-app 改动已同步回 WSL git 仓库"
+cp /mnt/c/Users/1/Desktop/RuoYi-App/开发日志.md /home/zzz/project/RuoYi-Vue-springboot3/RuoYi-App/开发日志.md
