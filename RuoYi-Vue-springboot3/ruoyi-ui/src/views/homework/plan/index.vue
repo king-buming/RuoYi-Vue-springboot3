@@ -134,12 +134,12 @@
           <el-select v-model="selectedWorkers" multiple filterable placeholder="请选择参与人员"
             value-key="workerId" style="width:100%">
             <el-option v-for="w in workerOptions" :key="w.workerId"
-              :label="w.workerName + ' (' + roleLabel(w.roleType) + ')'"
-              :value="{ workerId: w.workerId, workerName: w.workerName, roleType: w.roleType }" />
+              :label="w.workerName + (roleLabel(w.workerId) ? ' (' + roleLabel(w.workerId) + ')' : '')"
+              :value="{ workerId: w.workerId, workerName: w.workerName, roleType: roleLabel(w.workerId) }" />
           </el-select>
           <el-tag v-for="w in selectedWorkers" :key="w.workerId" closable style="margin:2px"
             @close="removeWorker(w.workerId)">
-            {{ w.workerName }}({{ roleLabel(w.roleType) }})
+            {{ w.workerName }}{{ w.roleType ? ' (' + w.roleType + ')' : '' }}
           </el-tag>
         </el-form-item>
         <el-form-item label="作业内容" prop="workContent">
@@ -164,7 +164,7 @@
 
 <script>
 import { listPlan, getPlan, delPlan, addPlan, updatePlan, changePlanStatus, getPlanWorkers, savePlanWorkers } from "@/api/homework/plan"
-import { listWorker } from "@/api/homework/worker"
+import { listWorker, getAllRoleNames } from "@/api/worker/worker"
 
 export default {
   name: "HwPlan",
@@ -181,6 +181,7 @@ export default {
       open: false,
       selectedWorkers: [],
       workerOptions: [],
+      roleNameMap: {},
       workTypeOptions: [
         { label: '动土', value: '动土' }, { label: '防腐', value: '防腐' },
         { label: '检测', value: '检测' }, { label: '临时用电', value: '临时用电' },
@@ -216,16 +217,28 @@ export default {
       const f = this.workTypeOptions.find(d => d.value === v)
       return f ? f.label : v
     },
-    roleLabel(type) {
-      const m = {'1':'作业申请人','2':'作业批准人','3':'作业监护人','4':'监理人员',
-        '5':'施工方项目经理','6':'施工方安全员','7':'施工方现场负责人','8':'作业单位监护人','9':'施工人员'}
-      return m[type] || type
+    roleLabel(workerId) {
+      const names = this.roleNameMap[workerId]
+      return names ? names.join(',') : ''
     },
     removeWorker(id) {
       this.selectedWorkers = this.selectedWorkers.filter(w => w.workerId !== id)
     },
     loadWorkerOptions() {
-      listWorker({ pageNum: 1, pageSize: 999, status: '0' }).then(r => { this.workerOptions = r.rows })
+      Promise.all([
+        listWorker({ pageNum: 1, pageSize: 999, status: '0' }),
+        getAllRoleNames()
+      ]).then(([workerRes, roleRes]) => {
+        const roleMap = {}
+        if (roleRes.data) {
+          roleRes.data.forEach(r => { roleMap[r.workerId] = r.roleName })
+        }
+        this.roleNameMap = roleMap
+        this.workerOptions = (workerRes.rows || []).map(w => ({
+          ...w,
+          workerId: w.id
+        }))
+      })
     },
     cancel() {
       this.open = false

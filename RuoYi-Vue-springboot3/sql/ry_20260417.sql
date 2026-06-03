@@ -748,36 +748,9 @@ create table hw_plan (
   primary key (plan_id)
 ) engine=innodb comment='作业计划表';
 
--- ----------------------------
--- 22、施工人员表
--- ----------------------------
-drop table if exists hw_worker;
-create table hw_worker (
-  worker_id    bigint(20)     not null auto_increment  comment '人员ID',
-  worker_name  varchar(64)    not null                  comment '姓名',
-  id_card      varchar(18)    default ''               comment '身份证号',
-  phone        varchar(20)    default ''               comment '手机号',
-  role_type    char(1)        default '9'               comment '人员角色（1作业申请人 2作业批准人 3作业监护人 4监理人员 5施工方项目经理 6施工方安全员 7施工方现场负责人 8作业单位监护人 9施工人员）',
-  unit_type    char(1)        default '3'               comment '单位类型（1管网 2第三方 3施工方）',
-  is_fixed_site char(1)       default '0'               comment '固定工点（0不固定 1固定）',
-  check_rule   varchar(100)   default ''               comment '打卡规则编码',
-  qualification varchar(200)  default ''               comment '资质证件名称',
-  qual_file_url varchar(500)  default ''               comment '资质证件上传URL',
-  qual_status  char(1)        default '0'               comment '资质审核状态（0待审核 1已通过 2已驳回）',
-  face_image   varchar(500)   default ''               comment '人脸底图URL',
-  face_status  char(1)        default '0'               comment '人脸注册状态（0未注册 1已注册）',
-  open_id      varchar(100)   default ''               comment '微信公众号openid',
-  status       char(1)        default '0'               comment '状态（0正常 1停用）',
-  create_by    varchar(64)    default ''               comment '创建者',
-  create_time  datetime                                comment '创建时间',
-  update_by    varchar(64)    default ''               comment '更新者',
-  update_time  datetime                                comment '更新时间',
-  remark       varchar(500)   default null             comment '备注',
-  primary key (worker_id)
-) engine=innodb comment='施工人员表';
 
 -- ----------------------------
--- 23、打卡记录表
+-- 22、打卡记录表
 -- ----------------------------
 drop table if exists hw_attendance;
 create table hw_attendance (
@@ -801,7 +774,7 @@ create table hw_attendance (
 ) engine=innodb comment='打卡记录表';
 
 -- ----------------------------
--- 24、作业管理菜单数据
+-- 23、作业管理菜单数据
 -- ----------------------------
 -- 更新若依官网排序号
 update sys_menu set order_num = 5 where menu_id = 4;
@@ -815,8 +788,7 @@ set @parent_id = (select menu_id from sys_menu where menu_name = '作业管理' 
 
 insert into sys_menu values
 (@parent_id+1, '作业计划', @parent_id, '1', 'plan',       'homework/plan/index',       '', 'HwPlan',       1, 0, 'C', '0', '0', 'homework:plan:list',        'build',   'admin', sysdate(), '', null, '作业计划菜单'),
-(@parent_id+2, '作业打卡', @parent_id, '2', 'attendance', 'homework/attendance/index',  '', 'HwAttendance', 1, 0, 'C', '0', '0', 'homework:attendance:list',  'monitor', 'admin', sysdate(), '', null, '作业打卡菜单'),
-(@parent_id+3, '人员管理', @parent_id, '3', 'worker',     'homework/worker/index',      '', 'HwWorker',     1, 0, 'C', '0', '0', 'homework:worker:list',      'user',    'admin', sysdate(), '', null, '人员管理菜单');
+(@parent_id+2, '作业打卡', @parent_id, '2', 'attendance', 'homework/attendance/index',  '', 'HwAttendance', 1, 0, 'C', '0', '0', 'homework:attendance:list',  'monitor', 'admin', sysdate(), '', null, '作业打卡菜单');
 
 -- 作业计划按钮权限（偏移 +11）
 set @plan_id = (select menu_id from sys_menu where perms = 'homework:plan:list');
@@ -834,13 +806,6 @@ insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component,
 (@att_id+103, '离场打卡',  @att_id, '3', '#', '', '', '', 1, 0, 'F', '0', '0', 'homework:attendance:checkOut', '#', 'admin', sysdate(), '', null, ''),
 (@att_id+104, '删除记录',  @att_id, '4', '#', '', '', '', 1, 0, 'F', '0', '0', 'homework:attendance:remove',   '#', 'admin', sysdate(), '', null, '');
 
--- 人员管理按钮权限（偏移 +201）
-set @worker_id = (select menu_id from sys_menu where perms = 'homework:worker:list');
-insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark) values
-(@worker_id+201, '人员查询', @worker_id, '1', '#', '', '', '', 1, 0, 'F', '0', '0', 'homework:worker:query',  '#', 'admin', sysdate(), '', null, ''),
-(@worker_id+202, '人员新增', @worker_id, '2', '#', '', '', '', 1, 0, 'F', '0', '0', 'homework:worker:add',    '#', 'admin', sysdate(), '', null, ''),
-(@worker_id+203, '人员修改', @worker_id, '3', '#', '', '', '', 1, 0, 'F', '0', '0', 'homework:worker:edit',   '#', 'admin', sysdate(), '', null, ''),
-(@worker_id+204, '人员删除', @worker_id, '4', '#', '', '', '', 1, 0, 'F', '0', '0', 'homework:worker:remove', '#', 'admin', sysdate(), '', null, '');
 
 -- 定时任务：作业打卡超时监控
 insert into sys_job values
@@ -849,19 +814,15 @@ insert into sys_job values
 -- 示例数据（使用 auto_increment，不指定主键）
 insert into hw_plan (city_county, construction_site, site_latitude, site_longitude, plan_work_time, project_name, work_type, construction_unit, workers, work_content, status, create_by, create_time) values
 ('广州市', '天河区体育西路工地', 23.1234567, 113.1234567, '2026-06-15 08:00:00', '管道维修项目A', '动土', '中建三局', '张三,李四,王五', 'DN300管道开挖修复', '0', 'admin', sysdate());
-insert into hw_worker (worker_name, id_card, phone, role_type, unit_type, is_fixed_site, check_rule, status, create_by, create_time) values
-('张三', '440101199001011234', '13800138001', '9', '3', '1', 'briefing', '0', 'admin', sysdate());
-insert into hw_worker (worker_name, id_card, phone, role_type, unit_type, is_fixed_site, check_rule, status, create_by, create_time) values
-('李四', '440101199002022345', '13800138002', '1', '1', '0', 'point', '0', 'admin', sysdate());
 
 -- ----------------------------
--- 25、作业计划人员关联表
+-- 24、作业计划人员关联表（人员ID关联tb_worker.id）
 -- ----------------------------
 DROP TABLE IF EXISTS hw_plan_worker;
 CREATE TABLE hw_plan_worker (
   id          BIGINT(20)   NOT NULL AUTO_INCREMENT  COMMENT '关联ID',
   plan_id     BIGINT(20)   NOT NULL                  COMMENT '作业计划ID',
-  worker_id   BIGINT(20)   NOT NULL                  COMMENT '人员ID',
+  worker_id   BIGINT(20)   NOT NULL                  COMMENT '人员ID（关联tb_worker.id）',
   worker_name VARCHAR(64)  DEFAULT ''               COMMENT '人员姓名（冗余）',
   role_type   CHAR(1)      DEFAULT ''               COMMENT '人员角色（冗余）',
   create_by   VARCHAR(64)  DEFAULT ''               COMMENT '创建者',
@@ -872,7 +833,7 @@ CREATE TABLE hw_plan_worker (
 ) ENGINE=InnoDB COMMENT='作业计划人员关联表';
 
 -- ----------------------------
--- 26、作业计划录像关联表
+-- 25、作业计划录像关联表
 -- ----------------------------
 DROP TABLE IF EXISTS hw_plan_video;
 CREATE TABLE hw_plan_video (
@@ -900,7 +861,7 @@ USE `ry-vue`;
 -- ---------------------------------------------------------
 DROP TABLE IF EXISTS `tb_worker`;
 CREATE TABLE `tb_worker` (
-  `id`           bigint       NOT NULL AUTO_INCREMENT COMMENT '人员ID',
+  `id`           bigint       NOT NULL AUTO_INCREMENT COMMENT '人员ID（关联tb_worker.id）',
   `worker_name`  varchar(50)  NOT NULL                COMMENT '姓名',
   `phone`        varchar(20)  DEFAULT ''              COMMENT '手机号',
   `id_card`      varchar(20)  DEFAULT ''              COMMENT '身份证号',
@@ -953,7 +914,7 @@ CREATE TABLE `tb_worker_role` (
 DROP TABLE IF EXISTS `tb_worker_role_rel`;
 CREATE TABLE `tb_worker_role_rel` (
   `id`        bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
-  `worker_id` bigint NOT NULL                COMMENT '人员ID',
+  `worker_id` bigint NOT NULL                COMMENT '人员ID（关联tb_worker.id）',
   `role_id`   bigint NOT NULL                COMMENT '角色规则ID',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_worker_role` (`worker_id`, `role_id`),
@@ -966,7 +927,7 @@ CREATE TABLE `tb_worker_role_rel` (
 DROP TABLE IF EXISTS `tb_worker_face`;
 CREATE TABLE `tb_worker_face` (
   `id`           bigint       NOT NULL AUTO_INCREMENT COMMENT '主键',
-  `worker_id`    bigint       NOT NULL                COMMENT '人员ID',
+  `worker_id`    bigint       NOT NULL                COMMENT '人员ID（关联tb_worker.id）',
   `face_img_url` varchar(500) DEFAULT ''              COMMENT '人脸照片URL',
   `face_feature` text                                 COMMENT '人脸特征值（AI生成）',
   `collect_time` datetime     DEFAULT NULL            COMMENT '采集时间',
@@ -985,7 +946,7 @@ CREATE TABLE `tb_worker_face` (
 DROP TABLE IF EXISTS `tb_worker_cert`;
 CREATE TABLE `tb_worker_cert` (
   `id`           bigint       NOT NULL AUTO_INCREMENT COMMENT '主键',
-  `worker_id`    bigint       NOT NULL                COMMENT '人员ID',
+  `worker_id`    bigint       NOT NULL                COMMENT '人员ID（关联tb_worker.id）',
   `cert_type`    varchar(50)  DEFAULT ''              COMMENT '证件类型',
   `cert_no`      varchar(100) DEFAULT ''              COMMENT '证件编号',
   `issue_date`   date         DEFAULT NULL            COMMENT '发证日期',
@@ -1030,7 +991,7 @@ CREATE TABLE `tb_worker_audit` (
 DROP TABLE IF EXISTS `tb_worker_checkin`;
 CREATE TABLE `tb_worker_checkin` (
   `id`           bigint       NOT NULL AUTO_INCREMENT COMMENT '主键',
-  `worker_id`    bigint       NOT NULL                COMMENT '人员ID',
+  `worker_id`    bigint       NOT NULL                COMMENT '人员ID（关联tb_worker.id）',
   `role_id`      bigint       DEFAULT NULL            COMMENT '打卡时角色ID',
   `check_type`   char(1)      DEFAULT ''              COMMENT '打卡类型（1签到 2签退 3点到）',
   `check_time`   datetime     DEFAULT NULL            COMMENT '打卡时间',

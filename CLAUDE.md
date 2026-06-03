@@ -107,7 +107,7 @@ ruoyi-generator    [代码生成] Controller 在 /tool/gen，基于 Velocity 模
 
 ### SQL 初始化
 
-- `sql/ry_20260417.sql` — 系统核心表 + 作业管理模块表
+- `sql/ry_20260417.sql` — 系统核心表 + 作业管理模块表（hw_plan/hw_attendance/hw_plan_worker/hw_plan_video）+ 人员信息管理模块表（tb_worker系列）
 - `sql/quartz.sql` — 定时任务表
 
 ---
@@ -236,9 +236,10 @@ Controller 的 checkIn/checkOut 方法**不应该**加 `@Validated`，因为 `ch
 |--------|------|---------|
 | 作业计划 | `/homework/plan/**` | `homework:plan:*` |
 | 作业打卡 | `/homework/attendance/**` | `homework:attendance:*` |
-| 人员管理 | `/homework/worker/**` | `homework:worker:*` |
 
-数据库表：`hw_plan`、`hw_attendance`、`hw_worker`（9 角色体系）。建表 SQL 在 `ry_20260417.sql` 第 727 行起。
+数据库表：`hw_plan`、`hw_attendance`、`hw_plan_worker`（关联 `tb_worker.id`）、`hw_plan_video`。建表 SQL 在 `ry_20260417.sql`。
+
+> **人员管理**已从作业管理模块移除，统一使用外部独立模块「人员信息管理」（`tb_worker` 系列表）。作业打卡中的人脸校验通过 `TbWorkerMapper` + `TbWorkerFaceMapper` 获取人员底图。
 
 ### 打卡业务规则（HwAttendanceServiceImpl）
 

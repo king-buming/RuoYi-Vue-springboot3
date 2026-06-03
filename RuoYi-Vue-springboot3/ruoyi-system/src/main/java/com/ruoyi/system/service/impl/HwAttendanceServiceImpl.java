@@ -12,10 +12,12 @@ import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.system.domain.HwAttendance;
 import com.ruoyi.system.domain.HwPlan;
-import com.ruoyi.system.domain.HwWorker;
+import com.ruoyi.system.domain.TbWorker;
+import com.ruoyi.system.domain.TbWorkerFace;
 import com.ruoyi.system.mapper.HwAttendanceMapper;
 import com.ruoyi.system.mapper.HwPlanMapper;
-import com.ruoyi.system.mapper.HwWorkerMapper;
+import com.ruoyi.system.mapper.TbWorkerMapper;
+import com.ruoyi.system.mapper.TbWorkerFaceMapper;
 import com.ruoyi.system.service.IHwAttendanceService;
 
 /**
@@ -33,7 +35,10 @@ public class HwAttendanceServiceImpl implements IHwAttendanceService
     private HwPlanMapper hwPlanMapper;
 
     @Autowired
-    private HwWorkerMapper hwWorkerMapper;
+    private TbWorkerMapper tbWorkerMapper;
+
+    @Autowired
+    private TbWorkerFaceMapper tbWorkerFaceMapper;
 
     @Autowired(required = false)
     private IFaceRecognitionService faceRecognitionService;
@@ -73,15 +78,24 @@ public class HwAttendanceServiceImpl implements IHwAttendanceService
                 attendance.setFailReason("人脸打卡需要上传抓拍图片");
                 return;
             }
-            HwWorker worker = hwWorkerMapper.selectHwWorkerByUserId(attendance.getUserId());
-            if (worker == null || StringUtils.isEmpty(worker.getFaceImage()))
+            TbWorker worker = tbWorkerMapper.selectTbWorkerById(attendance.getUserId());
+            if (worker == null)
+            {
+                attendance.setCheckStatus("1");
+                attendance.setFailReason("未找到该人员信息");
+                return;
+            }
+            TbWorkerFace queryFace = new TbWorkerFace();
+            queryFace.setWorkerId(attendance.getUserId());
+            List<TbWorkerFace> faces = tbWorkerFaceMapper.selectTbWorkerFaceList(queryFace);
+            if (faces.isEmpty() || StringUtils.isEmpty(faces.get(0).getFaceImgUrl()))
             {
                 attendance.setCheckStatus("1");
                 attendance.setFailReason("未找到该人员的人脸底图，请先在人员管理中上传");
                 return;
             }
             FaceMatchResult result = faceRecognitionService.compareFace(
-                attendance.getFaceImage(), worker.getFaceImage());
+                attendance.getFaceImage(), faces.get(0).getFaceImgUrl());
             if (!result.isMatched())
             {
                 attendance.setCheckStatus("1");
