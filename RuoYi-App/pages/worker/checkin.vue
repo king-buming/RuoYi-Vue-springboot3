@@ -24,6 +24,7 @@
 
 <script>
 import config from '@/config.js'
+import upload from '@/utils/upload'
 function pad(n) { return n < 10 ? '0' + n : '' + n }
 function authHeader() { return { 'Authorization': 'Bearer ' + (uni.getStorageSync('appToken') || '') } }
 
@@ -58,13 +59,23 @@ export default {
         }
       } catch (e) {}
     },
-    takePhoto() { uni.chooseImage({ count: 1, success: (res) => { this.photoUrl = res.tempFilePaths[0] } }) },
+    takePhoto() {
+      uni.chooseImage({ count: 1, success: async (res) => {
+        uni.showLoading({ title: '上传中...' })
+        try {
+          const result = await upload({ url: '/common/upload', filePath: res.tempFilePaths[0] })
+          this.photoUrl = result.url || result.data || result.fileName
+          uni.hideLoading()
+          uni.showToast({ title: '照片已上传', icon: 'success', duration: 1000 })
+        } catch (e) { uni.hideLoading(); uni.showToast({ title: '上传失败', icon: 'none' }) }
+      }})
+    },
     async doCheck(action) {
       this.loading = true
       try {
         const [err, res] = await uni.request({ url: config.baseUrl + '/app/checkin/' + action, method: 'POST', header: authHeader(), data: { checkMethod: 'H5', photoUrl: this.photoUrl } })
         this.loading = false
-        if (res.data.code === 200) { uni.showToast({ title: action === 'signIn' ? '签到成功' : '签退成功' }); this.refresh() }
+        if (res.data.code === 200) { uni.showToast({ title: action === 'signIn' ? '签到成功' : '签退成功' }); this.photoUrl = ''; this.refresh() }
         else { uni.showToast({ title: res.data.msg || '失败', icon: 'none' }) }
       } catch (e) { this.loading = false; uni.showToast({ title: '网络错误', icon: 'none' }) }
     },

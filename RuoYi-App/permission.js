@@ -1,17 +1,18 @@
 import { getToken } from '@/utils/auth'
 
-// 登录页面
+// 工人端登录页
+const workerLoginPage = "/pages/worker/login"
+// 系统端登录页（原有）
 const loginPage = "/pages/login"
-  
-// 页面白名单
+
+// 白名单：无需登录即可访问
 const whiteList = [
-  '/pages/login', '/pages/register', '/pages/common/webview/index'
+  '/pages/worker/login', '/pages/login', '/pages/register', '/pages/common/webview/index'
 ]
 
-// 检查地址白名单
-function checkWhite(url) {
+function needAuth(url) {
   const path = url.split('?')[0]
-  return whiteList.indexOf(path) !== -1
+  return !whiteList.includes(path)
 }
 
 // 页面跳转验证拦截器
@@ -19,21 +20,33 @@ let list = ["navigateTo", "redirectTo", "reLaunch", "switchTab"]
 list.forEach(item => {
   uni.addInterceptor(item, {
     invoke(to) {
-      if (getToken()) {
-        if (to.url === loginPage) {
-          uni.reLaunch({ url: "/" })
-        }
-        return true
-      } else {
-        if (checkWhite(to.url)) {
-          return true
-        }
-        uni.reLaunch({ url: loginPage })
-        return false
+      const hasSysToken = !!getToken()           // 系统登录 token
+      const hasAppToken = !!uni.getStorageSync('appToken')  // 工人端 token
+
+      // 如果已登录但还往登录页跳，直接跳到首页
+      if (to.url === loginPage && hasSysToken) {
+        uni.reLaunch({ url: "/" }); return false
       }
+      if (to.url === workerLoginPage && hasAppToken) {
+        uni.reLaunch({ url: "/pages/worker/checkin" }); return false
+      }
+
+      // 需要鉴权的页面
+      if (needAuth(to.url)) {
+        if (to.url.startsWith('/pages/worker/')) {
+          // 工人端页面走 appToken
+          if (!hasAppToken) {
+            uni.reLaunch({ url: workerLoginPage }); return false
+          }
+        } else {
+          // 系统页面走原有 token
+          if (!hasSysToken) {
+            uni.reLaunch({ url: loginPage }); return false
+          }
+        }
+      }
+      return true
     },
-    fail(err) {
-      console.log(err)
-    }
+    fail(err) { console.log(err) }
   })
 })

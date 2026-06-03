@@ -9,6 +9,15 @@
     "path": "pages/worker/records",
     "style": { "navigationBarTitleText": "打卡记录" }
   }, {
+    "path": "pages/worker/profile",
+    "style": { "navigationBarTitleText": "我的资料" }
+  }, {
+    "path": "pages/worker/certs",
+    "style": { "navigationBarTitleText": "我的资质" }
+  }, {
+    "path": "pages/worker/face",
+    "style": { "navigationBarTitleText": "人脸信息" }
+  }, {
     "path": "pages/login",
     "style": {
       "navigationBarTitleText": "登录"
