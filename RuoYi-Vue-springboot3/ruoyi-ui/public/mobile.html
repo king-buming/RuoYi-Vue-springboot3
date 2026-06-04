@@ -234,6 +234,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f5f5f5;
 
 <script>
 const API='http://localhost:8080';let token=localStorage.getItem('appToken');
+let canCheckin=localStorage.getItem('canCheckin')!=='false';
 function api(path,opt={}){
   const headers=opt.headers||{};
   if(token)headers['Authorization']='Bearer '+token;
@@ -292,8 +293,11 @@ async function doLogin(){
     const d=await r.json();
     if(d.code===200){
       token=d.data.token;localStorage.setItem('appToken',token);localStorage.setItem('workerName',d.data.workerName);
+      canCheckin=d.data.canCheckin!==false;localStorage.setItem('canCheckin',canCheckin?'1':'0');
       document.getElementById('tabBar').style.display='flex';
-      showTab('checkin');setInterval(updateClock,1000);
+      document.getElementById('tabCheckin').style.display=canCheckin?'flex':'none';
+      document.getElementById('tabWork').style.display=canCheckin?'flex':'none';
+      showTab(canCheckin?'checkin':'me');setInterval(updateClock,1000);
     }else{alert(d.msg||'登录失败')}
   }catch(e){alert('网络错误')}
 }
@@ -482,7 +486,10 @@ async function doUploadIdcard(){
   }catch(e){btn.disabled=false;btn.textContent='提 交';alert('网络错误')}
 }
 
-if(token){document.getElementById('tabBar').style.display='flex';showTab('checkin')}
+if(token){document.getElementById('tabBar').style.display='flex';
+  document.getElementById('tabCheckin').style.display=canCheckin?'flex':'none';
+  document.getElementById('tabWork').style.display=canCheckin?'flex':'none';
+  showTab(canCheckin?'checkin':'me')}
 else{showTab('login')}
 </script>
 </body>

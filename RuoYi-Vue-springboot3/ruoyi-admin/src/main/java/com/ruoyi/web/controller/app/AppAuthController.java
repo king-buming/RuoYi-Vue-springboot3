@@ -43,7 +43,6 @@ public class AppAuthController
                 if (r != null && !"0".equals(r.getIsSelfCheckin())) { canSelfCheckin = true; break; }
             }
         }
-        if (!canSelfCheckin) return AjaxResult.error("该人员为被动打卡角色（跟随班前喊话），无需登录");
         Map<String, Object> data = new HashMap<>();
         data.put("token", AppTokenUtil.create(w.getId()));
         data.put("workerId", w.getId());
@@ -51,6 +50,7 @@ public class AppAuthController
         data.put("auditStatus", w.getAuditStatus());
         data.put("faceStatus", w.getFaceStatus());
         data.put("status", w.getStatus());
+        data.put("canCheckin", canSelfCheckin);
         return AjaxResult.success(data);
     }
 
