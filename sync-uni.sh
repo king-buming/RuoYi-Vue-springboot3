@@ -8,3 +8,4 @@ cp /mnt/c/Users/1/Desktop/RuoYi-App/permission.js /home/zzz/project/RuoYi-Vue-sp
 echo "✅ uni-app 改动已同步回 WSL git 仓库"
 cp /mnt/c/Users/1/Desktop/RuoYi-App/开发日志.md /home/zzz/project/RuoYi-Vue-springboot3/RuoYi-App/开发日志.md
 cp /home/zzz/project/RuoYi-Vue-springboot3/RuoYi-Vue-springboot3/ruoyi-ui/public/mobile.html /mnt/c/Users/1/Desktop/RuoYi-App/static/index.html
+cp /home/zzz/project/RuoYi-Vue-springboot3/RuoYi-Vue-springboot3/ruoyi-ui/public/mobile.html /home/zzz/project/RuoYi-Vue-springboot3/RuoYi-App/mobile.html
