@@ -67,7 +67,14 @@ public class AppAuthController
         data.put("gender", w.getGender()); data.put("unitType", w.getUnitType());
         data.put("auditStatus", w.getAuditStatus()); data.put("faceStatus", w.getFaceStatus());
         data.put("status", w.getStatus());
-        data.put("roleIds", tbWorkerRoleRelMapper.selectRoleIdsByWorkerId(id));
+        List<Long> rids = tbWorkerRoleRelMapper.selectRoleIdsByWorkerId(id);
+        data.put("roleIds", rids);
+        List<String> roleNames = new ArrayList<>();
+        if (rids != null) for (Long rid : rids) {
+            TbWorkerRole r = tbWorkerRoleMapper.selectTbWorkerRoleById(rid);
+            if (r != null) roleNames.add(r.getRoleName());
+        }
+        data.put("roleNames", roleNames);
         return AjaxResult.success(data);
     }
 }
