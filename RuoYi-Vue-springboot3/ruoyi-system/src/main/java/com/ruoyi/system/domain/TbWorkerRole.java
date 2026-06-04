@@ -58,6 +58,10 @@ public class TbWorkerRole extends BaseEntity
     @Excel(name = "所需资质类型")
     private String certType;
 
+    /** 是否自主打卡（0跟随班前喊话 1自主签到签退） */
+    @Excel(name = "自主打卡", readConverterExp = "0=否,1=是")
+    private String isSelfCheckin;
+
     /** 状态（0正常 1停用） */
     @Excel(name = "状态", readConverterExp = "0=正常,1=停用")
     private String status;
@@ -172,6 +176,9 @@ public class TbWorkerRole extends BaseEntity
         return certType;
     }
 
+    public void setIsSelfCheckin(String isSelfCheckin) { this.isSelfCheckin = isSelfCheckin; }
+    public String getIsSelfCheckin() { return isSelfCheckin; }
+
     public void setStatus(String status)
     {
         this.status = status;
@@ -196,6 +203,7 @@ public class TbWorkerRole extends BaseEntity
             .append("hourlyInterval", getHourlyInterval())
             .append("needCert", getNeedCert())
             .append("certType", getCertType())
+            .append("isSelfCheckin", getIsSelfCheckin())
             .append("status", getStatus())
             .append("createBy", getCreateBy())
             .append("createTime", getCreateTime())

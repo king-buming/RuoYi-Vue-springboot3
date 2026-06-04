@@ -109,6 +109,11 @@
           <span>{{ scope.row.needHourlyCheck === '1' ? '是' : '否' }}</span>
         </template>
       </el-table-column>
+      <el-table-column label="自主打卡" align="center" prop="isSelfCheckin">
+        <template slot-scope="scope">
+          <span>{{ scope.row.isSelfCheckin === '0' ? '否' : '是' }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="需要资质" align="center" prop="needCert">
         <template slot-scope="scope">
           <span>{{ scope.row.needCert === '1' ? '是' : '否' }}</span>
@@ -197,6 +202,12 @@
         </el-form-item>
         <el-form-item label="点到间隔(分钟)" prop="hourlyInterval" v-if="form.needHourlyCheck === '1'">
           <el-input-number v-model="form.hourlyInterval" controls-position="right" :min="1" />
+        </el-form-item>
+        <el-form-item label="自主打卡" prop="isSelfCheckin">
+          <el-radio-group v-model="form.isSelfCheckin">
+            <el-radio label="1">是</el-radio>
+            <el-radio label="0">否（跟随班前喊话）</el-radio>
+          </el-radio-group>
         </el-form-item>
         <el-form-item label="需要资质" prop="needCert">
           <el-radio-group v-model="form.needCert">
@@ -312,6 +323,7 @@ export default {
         needSignOut: "0",
         needHourlyCheck: "0",
         hourlyInterval: undefined,
+        isSelfCheckin: "1",
         needCert: "0",
         certType: undefined,
         status: "0",

@@ -16,6 +16,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="hourlyInterval"    column="hourly_interval"    />
         <result property="needCert"    column="need_cert"    />
         <result property="certType"    column="cert_type"    />
+        <result property="isSelfCheckin"    column="is_self_checkin"    />
         <result property="status"    column="status"    />
         <result property="createBy"    column="create_by"    />
         <result property="createTime"    column="create_time"    />
@@ -25,7 +26,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectTbWorkerRoleVo">
-        select id, role_code, role_name, unit_type, fixed_site_flag, need_sign_in, need_sign_out, need_hourly_check, hourly_interval, need_cert, cert_type, status, create_by, create_time, update_by, update_time, remark from tb_worker_role
+        select id, role_code, role_name, unit_type, fixed_site_flag, need_sign_in, need_sign_out, need_hourly_check, hourly_interval, need_cert, cert_type, is_self_checkin, status, create_by, create_time, update_by, update_time, remark from tb_worker_role
     </sql>
 
     <select id="selectTbWorkerRoleList" parameterType="TbWorkerRole" resultMap="TbWorkerRoleResult">
@@ -63,6 +64,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="hourlyInterval != null">hourly_interval,</if>
             <if test="needCert != null">need_cert,</if>
             <if test="certType != null">cert_type,</if>
+            <if test="isSelfCheckin != null">is_self_checkin,</if>
             <if test="status != null">status,</if>
             <if test="createBy != null">create_by,</if>
             <if test="createTime != null">create_time,</if>
@@ -81,6 +83,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="hourlyInterval != null">#{hourlyInterval},</if>
             <if test="needCert != null">#{needCert},</if>
             <if test="certType != null">#{certType},</if>
+            <if test="isSelfCheckin != null">#{isSelfCheckin},</if>
             <if test="status != null">#{status},</if>
             <if test="createBy != null">#{createBy},</if>
             <if test="createTime != null">#{createTime},</if>
@@ -103,6 +106,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="hourlyInterval != null">hourly_interval = #{hourlyInterval},</if>
             <if test="needCert != null">need_cert = #{needCert},</if>
             <if test="certType != null">cert_type = #{certType},</if>
+            <if test="isSelfCheckin != null">is_self_checkin = #{isSelfCheckin},</if>
             <if test="status != null">status = #{status},</if>
             <if test="createBy != null">create_by = #{createBy},</if>
             <if test="createTime != null">create_time = #{createTime},</if>

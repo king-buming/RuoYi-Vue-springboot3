@@ -6,7 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.system.domain.TbWorker;
+import com.ruoyi.system.domain.TbWorkerRole;
 import com.ruoyi.system.mapper.TbWorkerMapper;
+import com.ruoyi.system.mapper.TbWorkerRoleMapper;
 import com.ruoyi.system.mapper.TbWorkerRoleRelMapper;
 import com.ruoyi.system.service.ITbWorkerService;
 
@@ -16,6 +18,7 @@ public class AppAuthController
 {
     @Autowired private TbWorkerMapper tbWorkerMapper;
     @Autowired private TbWorkerRoleRelMapper tbWorkerRoleRelMapper;
+    @Autowired private TbWorkerRoleMapper tbWorkerRoleMapper;
     @Autowired private ITbWorkerService workerService;
 
     /** 手机号+密码登录 → 返回 HMAC Token */
@@ -31,6 +34,16 @@ public class AppAuthController
                      && "0".equals(t.getDelFlag()) && !"2".equals(t.getStatus()))
             .findFirst().orElse(null);
         if (w == null) return AjaxResult.error("手机号或密码不正确");
+        // 检查是否有自主打卡权限
+        List<Long> roleIds = tbWorkerRoleRelMapper.selectRoleIdsByWorkerId(w.getId());
+        boolean canSelfCheckin = false;
+        if (roleIds != null && !roleIds.isEmpty()) {
+            for (Long rid : roleIds) {
+                TbWorkerRole r = tbWorkerRoleMapper.selectTbWorkerRoleById(rid);
+                if (r != null && !"0".equals(r.getIsSelfCheckin())) { canSelfCheckin = true; break; }
+            }
+        }
+        if (!canSelfCheckin) return AjaxResult.error("该人员为被动打卡角色（跟随班前喊话），无需登录");
         Map<String, Object> data = new HashMap<>();
         data.put("token", AppTokenUtil.create(w.getId()));
         data.put("workerId", w.getId());
