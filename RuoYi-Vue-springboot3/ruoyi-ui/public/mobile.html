@@ -62,6 +62,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f5f5f5;
 .tab-bar .tab .icon{font-size:22px;margin-bottom:2px}
 
 .logout-link{font-size:13px;color:#ff3b30;cursor:pointer}
+
+.grid{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px}
+.card{width:calc(50% - 6px);background:#fff;border-radius:12px;padding:24px 16px;text-align:center;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.card:active{background:#f0f0f0}
+.card-icon{font-size:36px;margin-bottom:8px}
+.card-title{font-size:15px;font-weight:bold;color:#333;margin-bottom:4px}
+.card-desc{font-size:12px;color:#999}
 </style>
 </head>
 <body>
@@ -102,11 +109,39 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f5f5f5;
   </div>
 </div>
 
+<!-- 工作台 -->
+<div id="workPage" class="page">
+  <div class="top-bar"><span class="name">工作台</span></div>
+  <div class="grid">
+    <div class="card" onclick="showPage('records')">
+      <div class="card-icon">📊</div>
+      <div class="card-title">打卡记录</div>
+      <div class="card-desc">查看签到签退历史</div>
+    </div>
+    <div class="card" onclick="showPage('projectStatus')">
+      <div class="card-icon">👥</div>
+      <div class="card-title">人员状态</div>
+      <div class="card-desc">同项目签到情况</div>
+    </div>
+  </div>
+</div>
+
 <!-- Records -->
 <div id="recordsPage" class="page">
-  <div class="top-bar"><span class="name">打卡记录</span></div>
+  <div class="top-bar">
+    <span class="name" onclick="showTab('work')" style="cursor:pointer">← 打卡记录</span>
+  </div>
   <div id="recordList"></div>
   <div class="empty" id="noRecords" style="display:none">暂无打卡记录</div>
+</div>
+
+<!-- 同项目人员状态 -->
+<div id="projectPage" class="page">
+  <div class="top-bar">
+    <span class="name" onclick="showTab('work')" style="cursor:pointer">← 同项目人员</span>
+  </div>
+  <div id="coworkerList"></div>
+  <div class="empty" id="noCoworkers" style="display:none">暂无</div>
 </div>
 
 <!-- Profile (我的) -->
@@ -178,7 +213,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f5f5f5;
 <!-- Tab Bar -->
 <div class="tab-bar" id="tabBar" style="display:none">
   <div class="tab active" onclick="showTab('checkin')" id="tabCheckin"><span class="icon">📋</span>打卡</div>
-  <div class="tab" onclick="showTab('records')" id="tabRecords"><span class="icon">📊</span>记录</div>
+  <div class="tab" onclick="showTab('work')" id="tabWork"><span class="icon">📊</span>工作台</div>
   <div class="tab" onclick="showTab('me')" id="tabMe"><span class="icon">👤</span>我的</div>
 </div>
 
@@ -212,8 +247,10 @@ function showTab(name){
   if(tabEl)tabEl.classList.add('active');
   if(name==='checkin'){refreshCheckin();updateClock();clockTimer=setInterval(updateClock,1000)}
   if(name==='records')loadRecords()
+  if(name==='work'){}
   if(name==='me')loadProfile()
   if(name==='cert')initCertDropdown()
+  if(name==='projectStatus')loadProjectStatus()
 }
 
 function showPage(name){ showTab(name) }
@@ -371,6 +408,22 @@ async function doUploadFace(){
     const d=await r.json();btn.disabled=false;btn.textContent='提 交';
     if(d.code===200){alert('人脸上传成功!');showTab('me')}else{alert(d.msg||'失败')}
   }catch(e){btn.disabled=false;btn.textContent='提 交';alert('网络错误')}
+}
+
+async function loadProjectStatus(){
+  if(!token)return
+  try{
+    const r=await api('/app/checkin/project-status')
+    const d=await r.json()
+    const list=d.data||[]
+    const el=document.getElementById('coworkerList')
+    if(!list.length){document.getElementById('noCoworkers').style.display='block';el.innerHTML='';return}
+    document.getElementById('noCoworkers').style.display='none'
+    el.innerHTML=list.map(p=>{
+      const inIcon=p.signedIn?'✅':'❌', outIcon=p.signedOut?'✅':'❌'
+      return '<div class="record-item"><div><div class="cname">'+p.workerName+'</div><div class="cno">签到:'+inIcon+' 签退:'+outIcon+'</div></div></div>'
+    }).join('')
+  }catch(e){}
 }
 
 async function doAddCert(){
