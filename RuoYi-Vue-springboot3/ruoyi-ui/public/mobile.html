@@ -234,7 +234,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f5f5f5;
 
 <script>
 const API='http://localhost:8080';let token=localStorage.getItem('appToken');
-let canCheckin=localStorage.getItem('canCheckin')!=='false';
+let canCheckin=localStorage.getItem('canCheckin')!=='0';
 function api(path,opt={}){
   const headers=opt.headers||{};
   if(token)headers['Authorization']='Bearer '+token;
