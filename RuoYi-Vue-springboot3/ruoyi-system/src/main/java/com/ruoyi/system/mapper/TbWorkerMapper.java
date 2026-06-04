@@ -68,4 +68,7 @@ public interface TbWorkerMapper
 
     /** 身份证号唯一检查，excludeId 非空时排除该 ID（修改场景） */
     public int checkIdCardUnique(@Param("idCard") String idCard, @Param("excludeId") Long excludeId);
+
+    /** 按手机号查询人员 */
+    public TbWorker selectTbWorkerByPhone(@Param("phone") String phone);
 }

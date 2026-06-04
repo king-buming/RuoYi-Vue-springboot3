@@ -76,6 +76,11 @@ export function getWorkerAudits(workerId) {
   return request({ url: '/worker/worker/' + workerId + '/audits', method: 'get' })
 }
 
+// 查询所有角色及其下的人员（供作业计划参与人员二级选择器使用）
+export function getRolesWithWorkers() {
+  return request({ url: '/worker/worker/rolesWithWorkers', method: 'get' })
+}
+
 // 保存人员角色关联
 export function saveWorkerRoles(workerId, roleIds) {
   return request({

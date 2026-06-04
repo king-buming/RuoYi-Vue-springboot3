@@ -22,4 +22,22 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         join tb_worker_role o on o.id = r.role_id
     </select>
 
+    <select id="selectRoleCodesByWorkerId" parameterType="Long" resultType="String">
+        select o.role_code from tb_worker_role_rel r
+        join tb_worker_role o on o.id = r.role_id
+        where r.worker_id = #{workerId}
+    </select>
+
+    <select id="selectWorkersByRole" resultType="java.util.HashMap">
+        select o.role_code   as roleCode,
+               o.role_name   as roleName,
+               w.id          as workerId,
+               w.worker_name as workerName
+        from tb_worker_role o
+        join tb_worker_role_rel rr on o.id = rr.role_id
+        join tb_worker w on w.id = rr.worker_id
+        where w.del_flag = '0' and w.status = '0' and o.status = '0'
+        order by o.id, w.id
+    </select>
+
 </mapper>

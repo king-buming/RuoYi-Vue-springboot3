@@ -70,11 +70,13 @@ public class AppAuthController
         List<Long> rids = tbWorkerRoleRelMapper.selectRoleIdsByWorkerId(id);
         data.put("roleIds", rids);
         List<String> roleNames = new ArrayList<>();
+        List<String> roleCodes = new ArrayList<>();
         if (rids != null) for (Long rid : rids) {
             TbWorkerRole r = tbWorkerRoleMapper.selectTbWorkerRoleById(rid);
-            if (r != null) roleNames.add(r.getRoleName());
+            if (r != null) { roleNames.add(r.getRoleName()); roleCodes.add(r.getRoleCode()); }
         }
         data.put("roleNames", roleNames);
+        data.put("roleCodes", roleCodes);
         return AjaxResult.success(data);
     }
 }

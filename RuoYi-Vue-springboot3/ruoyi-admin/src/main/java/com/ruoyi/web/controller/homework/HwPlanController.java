@@ -19,9 +19,13 @@ import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.exception.ServiceException;
+import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.system.domain.HwPlan;
 import com.ruoyi.system.domain.HwPlanVideo;
 import com.ruoyi.system.domain.HwPlanWorker;
+import com.ruoyi.system.domain.TbWorker;
+import com.ruoyi.system.mapper.TbWorkerMapper;
+import com.ruoyi.system.mapper.TbWorkerRoleRelMapper;
 import com.ruoyi.system.service.IHwPlanService;
 import com.ruoyi.system.service.IHwPlanVideoService;
 import com.ruoyi.system.service.IHwPlanWorkerService;
@@ -44,6 +48,12 @@ public class HwPlanController extends BaseController
     @Autowired
     private IHwPlanVideoService planVideoService;
 
+    @Autowired
+    private TbWorkerMapper tbWorkerMapper;
+
+    @Autowired
+    private TbWorkerRoleRelMapper tbWorkerRoleRelMapper;
+
     @PreAuthorize("@ss.hasPermi('homework:plan:list')")
     @GetMapping("/list")
     public TableDataInfo list(HwPlan plan)
@@ -65,8 +75,17 @@ public class HwPlanController extends BaseController
     @PostMapping
     public AjaxResult add(@Validated @RequestBody HwPlan plan)
     {
-        plan.setCreateBy(getUsername());
-        return toAjax(hwPlanService.insertHwPlan(plan));
+        try
+        {
+            validatePlanCreator();
+            plan.setCreateBy(getUsername());
+            hwPlanService.insertHwPlan(plan);
+            return success(plan.getPlanId());
+        }
+        catch (ServiceException e)
+        {
+            return error(e.getMessage());
+        }
     }
 
     @PreAuthorize("@ss.hasPermi('homework:plan:edit')")
@@ -145,5 +164,54 @@ public class HwPlanController extends BaseController
     public AjaxResult unbindVideo(@PathVariable Long id)
     {
         return toAjax(planVideoService.deleteById(id));
+    }
+
+    /**
+     * 校验作业计划创建者权限：系统管理员 或 施工方人员（unit_type='3' 且角色不是施工人员 role_code!='worker'）
+     */
+    private void validatePlanCreator()
+    {
+        if (SecurityUtils.isAdmin())
+        {
+            return;
+        }
+        String userName = SecurityUtils.getUsername();
+        // 按用户名查找人员
+        TbWorker worker = null;
+        TbWorker query = new TbWorker();
+        query.setWorkerName(userName);
+        List<TbWorker> workers = tbWorkerMapper.selectTbWorkerList(query);
+        if (!workers.isEmpty())
+        {
+            worker = workers.get(0);
+        }
+        // 按手机号查找
+        if (worker == null)
+        {
+            TbWorker phoneQuery = new TbWorker();
+            phoneQuery.setPhone(userName);
+            List<TbWorker> phoneWorkers = tbWorkerMapper.selectTbWorkerList(phoneQuery);
+            if (!phoneWorkers.isEmpty())
+            {
+                worker = phoneWorkers.get(0);
+            }
+        }
+        if (worker == null)
+        {
+            throw new ServiceException("未找到您的人员信息，无法创建作业计划");
+        }
+        if (!"3".equals(worker.getUnitType()))
+        {
+            throw new ServiceException("仅施工方人员可创建作业计划");
+        }
+        List<String> roleCodes = tbWorkerRoleRelMapper.selectRoleCodesByWorkerId(worker.getId());
+        if (roleCodes.isEmpty())
+        {
+            throw new ServiceException("您未分配任何人员角色，无法创建作业计划");
+        }
+        if (roleCodes.contains("worker") && roleCodes.size() == 1)
+        {
+            throw new ServiceException("普通施工人员无权创建作业计划，请联系施工方管理人员");
+        }
     }
 }

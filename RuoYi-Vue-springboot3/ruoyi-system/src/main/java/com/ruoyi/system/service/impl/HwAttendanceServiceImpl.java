@@ -141,15 +141,22 @@ public class HwAttendanceServiceImpl implements IHwAttendanceService
     @Override
     public HwAttendance checkIn(HwAttendance attendance)
     {
-        // 1. 校验作业计划存在且状态为待执行或进行中
+        // 1. 校验作业计划存在且状态为待执行(1)或进行中(2)
         HwPlan plan = hwPlanMapper.selectHwPlanById(attendance.getPlanId());
         if (plan == null)
         {
             throw new ServiceException("作业计划不存在");
         }
-        if (!"0".equals(plan.getStatus()) && !"1".equals(plan.getStatus()))
+        if (!"1".equals(plan.getStatus()) && !"2".equals(plan.getStatus()))
         {
-            throw new ServiceException("作业计划状态不允许打卡（仅待执行/进行中可打卡）");
+            if ("0".equals(plan.getStatus()))
+                throw new ServiceException("该计划尚未通过审核，无法打卡");
+            else if ("4".equals(plan.getStatus()))
+                throw new ServiceException("该计划已取消，无法打卡");
+            else if ("3".equals(plan.getStatus()))
+                throw new ServiceException("该计划已完成，无法打卡");
+            else
+                throw new ServiceException("作业计划状态不允许打卡");
         }
         // 2. 校验是否已进场未离场
         HwAttendance lastCheckIn = hwAttendanceMapper.selectLastCheckIn(attendance.getPlanId(), attendance.getUserId());
@@ -166,21 +173,35 @@ public class HwAttendanceServiceImpl implements IHwAttendanceService
         doCheckInValidation(attendance, plan);
         // 5. 写入记录（无论校验结果都写入，失败原因记录在checkStatus和failReason中）
         hwAttendanceMapper.insertHwAttendance(attendance);
+        // 6. 首次进场打卡时，将计划状态从待执行(1)自动切换为进行中(2)
+        if ("0".equals(attendance.getCheckStatus()) && "1".equals(plan.getStatus()))
+        {
+            plan.setStatus("2");
+            plan.setUpdateBy("SYSTEM");
+            hwPlanMapper.updateHwPlan(plan);
+        }
         return attendance;
     }
 
     @Override
     public HwAttendance checkOut(HwAttendance attendance)
     {
-        // 1. 校验作业计划存在且状态允许
+        // 1. 校验作业计划存在且状态为待执行(1)或进行中(2)
         HwPlan plan = hwPlanMapper.selectHwPlanById(attendance.getPlanId());
         if (plan == null)
         {
             throw new ServiceException("作业计划不存在");
         }
-        if (!"0".equals(plan.getStatus()) && !"1".equals(plan.getStatus()))
+        if (!"1".equals(plan.getStatus()) && !"2".equals(plan.getStatus()))
         {
-            throw new ServiceException("作业计划状态不允许打卡（仅待执行/进行中可打卡）");
+            if ("0".equals(plan.getStatus()))
+                throw new ServiceException("该计划尚未通过审核，无法打卡");
+            else if ("4".equals(plan.getStatus()))
+                throw new ServiceException("该计划已取消，无法打卡");
+            else if ("3".equals(plan.getStatus()))
+                throw new ServiceException("该计划已完成，无法打卡");
+            else
+                throw new ServiceException("作业计划状态不允许打卡");
         }
         // 2. 校验有进场记录
         HwAttendance lastCheckIn = hwAttendanceMapper.selectLastCheckIn(attendance.getPlanId(), attendance.getUserId());

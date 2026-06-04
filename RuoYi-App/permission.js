@@ -8,8 +8,10 @@ const loginPage = "/pages/login"
 // 白名单：无需登录即可访问
 const whiteList = [
   '/pages/worker/login', '/pages/login', '/pages/register', '/pages/common/webview/index',
-  '/pages/worker/checkin', '/pages/worker/records', '/pages/worker/mine',
-  '/pages/worker/idcard', '/pages/worker/upload', '/pages/worker/face'
+  '/pages/worker/checkin', '/pages/worker/records', '/pages/worker/workbench', '/pages/worker/mine',
+  '/pages/worker/idcard', '/pages/worker/upload', '/pages/worker/face',
+  '/pages/worker/plan/list', '/pages/worker/plan/detail', '/pages/worker/plan/create',
+  '/pages/worker/review/list', '/pages/worker/review/detail'
 ]
 
 function needAuth(url) {

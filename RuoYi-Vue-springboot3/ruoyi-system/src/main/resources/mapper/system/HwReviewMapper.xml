@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.HwReviewMapper">
+
+    <resultMap type="HwReview" id="HwReviewResult">
+        <id     property="reviewId"         column="review_id"           />
+        <result property="planId"           column="plan_id"             />
+        <result property="planName"         column="plan_name"           />
+        <result property="workType"         column="work_type"           />
+        <result property="constructionUnit" column="construction_unit"   />
+        <result property="applicant"        column="applicant"           />
+        <result property="applyTime"        column="apply_time"          />
+        <result property="reviewStatus"     column="review_status"       />
+        <result property="reviewOpinion"    column="review_opinion"      />
+        <result property="reviewer"         column="reviewer"            />
+        <result property="reviewTime"       column="review_time"         />
+        <result property="createBy"         column="create_by"           />
+        <result property="createTime"       column="create_time"         />
+        <result property="updateBy"         column="update_by"           />
+        <result property="updateTime"       column="update_time"         />
+        <result property="remark"           column="remark"              />
+    </resultMap>
+
+    <sql id="selectHwReviewVo">
+        select review_id, plan_id, plan_name, work_type, construction_unit,
+               applicant, apply_time, review_status, review_opinion,
+               reviewer, review_time, create_by, create_time, update_by, update_time, remark
+        from hw_review
+    </sql>
+
+    <select id="selectHwReviewList" parameterType="HwReview" resultMap="HwReviewResult">
+        <include refid="selectHwReviewVo"/>
+        <where>
+            <if test="planName != null and planName != ''">
+                AND plan_name like concat('%', #{planName}, '%')
+            </if>
+            <if test="reviewStatus != null and reviewStatus != ''">
+                AND review_status = #{reviewStatus}
+            </if>
+            <if test="applicant != null and applicant != ''">
+                AND applicant = #{applicant}
+            </if>
+            <if test="params.beginTime != null and params.beginTime != ''">
+                AND apply_time &gt;= #{params.beginTime}
+            </if>
+            <if test="params.endTime != null and params.endTime != ''">
+                AND apply_time &lt;= #{params.endTime}
+            </if>
+        </where>
+        order by apply_time desc
+    </select>
+
+    <select id="selectHwReviewById" parameterType="Long" resultMap="HwReviewResult">
+        <include refid="selectHwReviewVo"/>
+        where review_id = #{reviewId}
+    </select>
+
+    <select id="selectHwReviewByPlanId" parameterType="Long" resultMap="HwReviewResult">
+        <include refid="selectHwReviewVo"/>
+        where plan_id = #{planId}
+    </select>
+
+    <insert id="insertHwReview" parameterType="HwReview" useGeneratedKeys="true" keyProperty="reviewId">
+        insert into hw_review(
+            <if test="planId != null">plan_id,</if>
+            <if test="planName != null and planName != ''">plan_name,</if>
+            <if test="workType != null and workType != ''">work_type,</if>
+            <if test="constructionUnit != null and constructionUnit != ''">construction_unit,</if>
+            <if test="applicant != null and applicant != ''">applicant,</if>
+            <if test="applyTime != null">apply_time,</if>
+            <if test="reviewStatus != null and reviewStatus != ''">review_status,</if>
+            <if test="reviewOpinion != null and reviewOpinion != ''">review_opinion,</if>
+            <if test="reviewer != null and reviewer != ''">reviewer,</if>
+            <if test="reviewTime != null">review_time,</if>
+            <if test="createBy != null and createBy != ''">create_by,</if>
+            create_time
+        )values(
+            <if test="planId != null">#{planId},</if>
+            <if test="planName != null and planName != ''">#{planName},</if>
+            <if test="workType != null and workType != ''">#{workType},</if>
+            <if test="constructionUnit != null and constructionUnit != ''">#{constructionUnit},</if>
+            <if test="applicant != null and applicant != ''">#{applicant},</if>
+            <if test="applyTime != null">#{applyTime},</if>
+            <if test="reviewStatus != null and reviewStatus != ''">#{reviewStatus},</if>
+            <if test="reviewOpinion != null and reviewOpinion != ''">#{reviewOpinion},</if>
+            <if test="reviewer != null and reviewer != ''">#{reviewer},</if>
+            <if test="reviewTime != null">#{reviewTime},</if>
+            <if test="createBy != null and createBy != ''">#{createBy},</if>
+            sysdate()
+        )
+    </insert>
+
+    <update id="updateHwReview" parameterType="HwReview">
+        update hw_review
+        <set>
+            <if test="reviewStatus != null and reviewStatus != ''">review_status = #{reviewStatus},</if>
+            <if test="reviewOpinion != null">review_opinion = #{reviewOpinion},</if>
+            <if test="reviewer != null">reviewer = #{reviewer},</if>
+            <if test="reviewTime != null">review_time = #{reviewTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </set>
+        where review_id = #{reviewId}
+    </update>
+
+    <delete id="deleteHwReviewById" parameterType="Long">
+        delete from hw_review where review_id = #{reviewId}
+    </delete>
+
+    <delete id="deleteHwReviewByIds" parameterType="Long">
+        delete from hw_review where review_id in
+        <foreach collection="array" item="reviewId" open="(" separator="," close=")">
+            #{reviewId}
+        </foreach>
+    </delete>
+
+</mapper>

@@ -86,6 +86,11 @@
 
     <!-- 打卡弹窗 -->
     <el-dialog :title="checkDialogTitle" :visible.sync="checkOpen" width="500px" append-to-body>
+      <el-alert type="warning" :closable="false" style="margin-bottom:15px">
+        <template slot="title">
+          <span>注意：仅审核通过的作业计划（状态为"待执行"或"进行中"）可进行打卡操作</span>
+        </template>
+      </el-alert>
       <el-alert type="info" :closable="false" style="margin-bottom:15px">
         <template slot="title">
           <span v-if="checkMode === 'in'">进场打卡：请确保已在施工点范围内，并完成人脸识别</span>

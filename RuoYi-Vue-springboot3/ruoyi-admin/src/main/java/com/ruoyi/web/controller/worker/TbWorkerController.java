@@ -228,4 +228,11 @@ public class TbWorkerController extends BaseController
     {
         return success(tbWorkerRoleRelMapper.selectAllWithRoleNames());
     }
+
+    /** 查询所有角色及其下的人员列表，供作业计划参与人员二级选择器使用 */
+    @GetMapping("/rolesWithWorkers")
+    public AjaxResult rolesWithWorkers()
+    {
+        return success(tbWorkerRoleRelMapper.selectWorkersByRole());
+    }
 }

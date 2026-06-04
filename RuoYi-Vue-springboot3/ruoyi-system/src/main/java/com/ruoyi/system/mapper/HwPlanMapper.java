@@ -1,6 +1,7 @@
 package com.ruoyi.system.mapper;
 
 import java.util.List;
+import org.apache.ibatis.annotations.Param;
 import com.ruoyi.system.domain.HwPlan;
 
 /**
@@ -21,4 +22,6 @@ public interface HwPlanMapper
     public int deleteHwPlanById(Long planId);
 
     public int deleteHwPlanByIds(Long[] planIds);
+
+    public List<HwPlan> selectHwPlanListByWorkerId(@Param("workerId") Long workerId, @Param("status") String status);
 }

@@ -9,6 +9,9 @@
     "path": "pages/worker/records",
     "style": { "navigationBarTitleText": "打卡记录" }
   }, {
+    "path": "pages/worker/workbench",
+    "style": { "navigationBarTitleText": "工作台" }
+  }, {
     "path": "pages/worker/mine",
     "style": { "navigationBarTitleText": "我的" }
   }, {
@@ -17,6 +20,21 @@
   }, {
     "path": "pages/worker/upload",
     "style": { "navigationBarTitleText": "上传资质" }
+  }, {
+    "path": "pages/worker/plan/list",
+    "style": { "navigationBarTitleText": "作业计划" }
+  }, {
+    "path": "pages/worker/plan/detail",
+    "style": { "navigationBarTitleText": "计划详情" }
+  }, {
+    "path": "pages/worker/plan/create",
+    "style": { "navigationBarTitleText": "新建计划" }
+  }, {
+    "path": "pages/worker/review/list",
+    "style": { "navigationBarTitleText": "作业审核" }
+  }, {
+    "path": "pages/worker/review/detail",
+    "style": { "navigationBarTitleText": "审核详情" }
   }, {
     "path": "pages/login",
     "style": { "navigationBarTitleText": "登录" }
@@ -44,10 +62,10 @@
       "selectedIconPath": "static/images/tabbar/home_.png",
       "text": "打卡"
     }, {
-      "pagePath": "pages/worker/records",
+      "pagePath": "pages/worker/workbench",
       "iconPath": "static/images/tabbar/work.png",
       "selectedIconPath": "static/images/tabbar/work_.png",
-      "text": "记录"
+      "text": "工作台"
     }, {
       "pagePath": "pages/worker/mine",
       "iconPath": "static/images/tabbar/mine.png",

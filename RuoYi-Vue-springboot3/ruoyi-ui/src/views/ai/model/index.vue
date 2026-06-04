@@ -77,11 +77,12 @@
         <el-card v-if="currentModel" class="detail-card">
           <div slot="header" class="clearfix">
             <span style="font-weight:bold;font-size:16px;">{{ currentModel.modelName }}</span>
-            <el-tag v-if="currentModel.status === '0'" type="info" style="float:right;">未部署</el-tag>
-            <el-tag v-else-if="currentModel.status === '1'" type="success" style="float:right;">已部署</el-tag>
-            <el-tag v-else-if="currentModel.status === '2'" type="warning" style="float:right;">运行中</el-tag>
-            <el-tag v-else-if="currentModel.status === '3'" type="danger" style="float:right;">异常</el-tag>
-            <el-tag v-else-if="currentModel.status === '4'" type="info" style="float:right;">已下线</el-tag>
+            <el-button type="text" icon="el-icon-close" style="float:right;padding:3px 0;font-size:18px;" @click="currentModel = null" />
+            <el-tag v-if="currentModel.status === '0'" type="info" style="float:right;margin-right:8px;">未部署</el-tag>
+            <el-tag v-else-if="currentModel.status === '1'" type="success" style="float:right;margin-right:8px;">已部署</el-tag>
+            <el-tag v-else-if="currentModel.status === '2'" type="warning" style="float:right;margin-right:8px;">运行中</el-tag>
+            <el-tag v-else-if="currentModel.status === '3'" type="danger" style="float:right;margin-right:8px;">异常</el-tag>
+            <el-tag v-else-if="currentModel.status === '4'" type="info" style="float:right;margin-right:8px;">已下线</el-tag>
           </div>
           <el-descriptions :column="2" size="small" border>
             <el-descriptions-item label="模型编码">{{ currentModel.modelCode }}</el-descriptions-item>

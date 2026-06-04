@@ -121,4 +121,16 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </foreach>
     </delete>
 
+    <select id="selectHwPlanListByWorkerId" resultMap="HwPlanResult">
+        select distinct p.* from hw_plan p
+        left join hw_plan_worker pw on p.plan_id = pw.plan_id
+        left join tb_worker w on w.id = #{workerId}
+        where (pw.worker_id = #{workerId}
+               or p.create_by = w.worker_name)
+        <if test="status != null and status != ''">
+            and p.status = #{status}
+        </if>
+        order by p.create_time desc
+    </select>
+
 </mapper>

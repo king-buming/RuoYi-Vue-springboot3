@@ -52,8 +52,8 @@
       <el-table-column label="施工单位" align="center" prop="constructionUnit" show-overflow-tooltip />
       <el-table-column label="状态" align="center" prop="status" width="100">
         <template slot-scope="scope">
-          <el-tag :type="['info','primary','success','danger'][Number(scope.row.status)]">
-            {{ ['待执行','进行中','已完成','已取消'][Number(scope.row.status)] }}
+          <el-tag :type="['warning','info','primary','success','danger'][Number(scope.row.status)]">
+            {{ ['待审核','待执行','进行中','已完成','已取消'][Number(scope.row.status)] }}
           </el-tag>
         </template>
       </el-table-column>
@@ -62,18 +62,20 @@
           <span>{{ parseTime(scope.row.createTime) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="280">
+      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="320">
         <template slot-scope="scope">
-          <el-button size="mini" type="text" icon="el-icon-view" @click="handleViewAttendance(scope.row)">打卡</el-button>
-          <el-dropdown v-if="scope.row.status !== '2' && scope.row.status !== '3'"
-            @command="(cmd) => handleStatusChange(scope.row, cmd)" style="margin-left:5px">
+          <el-button size="mini" type="text" icon="el-icon-document" @click="handleViewReview(scope.row)">审核</el-button>
+          <el-button v-if="['1','2'].includes(scope.row.status)" size="mini" type="text" icon="el-icon-view" @click="handleViewAttendance(scope.row)">打卡</el-button>
+          <el-dropdown v-if="scope.row.status !== '3'"
+            @command="(cmd) => handleStatusChange(scope.row, cmd)" style="margin-left:3px">
             <el-button size="mini" type="text">
               状态<i class="el-icon-arrow-down el-icon--right"></i>
             </el-button>
             <el-dropdown-menu slot="dropdown">
-              <el-dropdown-item v-if="scope.row.status === '0'" command="1">开始作业</el-dropdown-item>
-              <el-dropdown-item v-if="scope.row.status === '1'" command="2">标记完成</el-dropdown-item>
-              <el-dropdown-item command="3">取消计划</el-dropdown-item>
+              <el-dropdown-item v-if="scope.row.status === '1'" command="2">开始作业</el-dropdown-item>
+              <el-dropdown-item v-if="scope.row.status === '2'" command="3">标记完成</el-dropdown-item>
+              <el-dropdown-item v-if="['0','1','2'].includes(scope.row.status)" command="4">取消计划</el-dropdown-item>
+              <el-dropdown-item v-if="scope.row.status === '4'" command="0">恢复为待审核</el-dropdown-item>
             </el-dropdown-menu>
           </el-dropdown>
           <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['homework:plan:edit']">修改</el-button>
@@ -131,12 +133,37 @@
           <el-input v-model="form.constructionUnit" placeholder="请输入施工单位" />
         </el-form-item>
         <el-form-item label="参与人员">
-          <el-select v-model="selectedWorkers" multiple filterable placeholder="请选择参与人员"
-            value-key="workerId" style="width:100%">
-            <el-option v-for="w in workerOptions" :key="w.workerId"
-              :label="w.workerName + (roleLabel(w.workerId) ? ' (' + roleLabel(w.workerId) + ')' : '')"
-              :value="{ workerId: w.workerId, workerName: w.workerName, roleType: roleLabel(w.workerId) }" />
-          </el-select>
+          <el-popover placement="bottom-start" width="550" trigger="click" v-model="workerPopVisible">
+            <div style="display:flex;height:320px">
+              <div style="width:180px;border-right:1px solid #e4e7ed;overflow-y:auto;padding:5px 0">
+                <div v-for="role in roleGroups" :key="role.roleCode"
+                  @click="activeRole = role.roleCode"
+                  :style="{padding:'8px 12px',cursor:'pointer',
+                    background: activeRole === role.roleCode ? '#ecf5ff' : 'transparent',
+                    color: activeRole === role.roleCode ? '#409eff' : '#606266',
+                    borderLeft: activeRole === role.roleCode ? '3px solid #409eff' : '3px solid transparent'}">
+                  {{ role.roleName }}
+                  <span style="float:right;color:#909399;font-size:12px">{{ role.workers.length }}</span>
+                </div>
+              </div>
+              <div style="flex:1;overflow-y:auto;padding:10px 15px">
+                <el-checkbox-group v-model="checkedWorkerIds" @change="onWorkerCheckChange">
+                  <div v-for="w in activeRoleWorkers" :key="w.workerId" style="margin-bottom:8px">
+                    <el-checkbox :label="w.workerId">{{ w.workerName }}</el-checkbox>
+                  </div>
+                </el-checkbox-group>
+                <div v-if="activeRoleWorkers.length === 0" style="color:#909399;text-align:center;margin-top:80px">
+                  该角色下暂无人员
+                </div>
+              </div>
+            </div>
+            <div style="border-top:1px solid #e4e7ed;padding:8px 10px;text-align:right">
+              <el-button size="mini" type="primary" @click="workerPopVisible = false">确 定</el-button>
+            </div>
+            <el-input slot="reference" readonly :value="selectedWorkersText" placeholder="点击选择参与人员" style="cursor:pointer">
+              <i slot="suffix" class="el-icon-arrow-down" style="cursor:pointer" />
+            </el-input>
+          </el-popover>
           <el-tag v-for="w in selectedWorkers" :key="w.workerId" closable style="margin:2px"
             @close="removeWorker(w.workerId)">
             {{ w.workerName }}{{ w.roleType ? ' (' + w.roleType + ')' : '' }}
@@ -164,7 +191,7 @@
 
 <script>
 import { listPlan, getPlan, delPlan, addPlan, updatePlan, changePlanStatus, getPlanWorkers, savePlanWorkers } from "@/api/homework/plan"
-import { listWorker, getAllRoleNames } from "@/api/worker/worker"
+import { getRolesWithWorkers } from "@/api/worker/worker"
 
 export default {
   name: "HwPlan",
@@ -180,8 +207,10 @@ export default {
       title: "",
       open: false,
       selectedWorkers: [],
-      workerOptions: [],
-      roleNameMap: {},
+      workerPopVisible: false,
+      roleGroups: [],
+      activeRole: '',
+      checkedWorkerIds: [],
       workTypeOptions: [
         { label: '动土', value: '动土' }, { label: '防腐', value: '防腐' },
         { label: '检测', value: '检测' }, { label: '临时用电', value: '临时用电' },
@@ -189,8 +218,9 @@ export default {
         { label: '修复', value: '修复' }, { label: '点火', value: '点火' }
       ],
       statusOptions: [
-        { label: '待执行', value: '0' }, { label: '进行中', value: '1' },
-        { label: '已完成', value: '2' }, { label: '已取消', value: '3' }
+        { label: '待审核', value: '0' }, { label: '待执行', value: '1' },
+        { label: '进行中', value: '2' }, { label: '已完成', value: '3' },
+        { label: '已取消', value: '4' }
       ],
       queryParams: { pageNum: 1, pageSize: 10, projectName: undefined, workType: undefined, status: undefined },
       form: {},
@@ -199,6 +229,16 @@ export default {
         workType: [{ required: true, message: "作业类型不能为空", trigger: "change" }],
         planWorkTime: [{ required: true, message: "计划作业时间不能为空", trigger: "change" }]
       }
+    }
+  },
+  computed: {
+    activeRoleWorkers() {
+      const role = this.roleGroups.find(r => r.roleCode === this.activeRole)
+      return role ? role.workers : []
+    },
+    selectedWorkersText() {
+      if (this.selectedWorkers.length === 0) return ''
+      return '已选 ' + this.selectedWorkers.length + ' 人'
     }
   },
   created() {
@@ -217,27 +257,38 @@ export default {
       const f = this.workTypeOptions.find(d => d.value === v)
       return f ? f.label : v
     },
-    roleLabel(workerId) {
-      const names = this.roleNameMap[workerId]
-      return names ? names.join(',') : ''
-    },
     removeWorker(id) {
       this.selectedWorkers = this.selectedWorkers.filter(w => w.workerId !== id)
+      this.checkedWorkerIds = this.checkedWorkerIds.filter(wid => wid !== id)
     },
     loadWorkerOptions() {
-      Promise.all([
-        listWorker({ pageNum: 1, pageSize: 999, status: '0' }),
-        getAllRoleNames()
-      ]).then(([workerRes, roleRes]) => {
-        const roleMap = {}
-        if (roleRes.data) {
-          roleRes.data.forEach(r => { roleMap[r.workerId] = r.roleName })
+      getRolesWithWorkers().then(r => {
+        const data = r.data || []
+        const groupMap = {}
+        data.forEach(item => {
+          if (!groupMap[item.roleCode]) {
+            groupMap[item.roleCode] = { roleCode: item.roleCode, roleName: item.roleName, workers: [] }
+          }
+          groupMap[item.roleCode].workers.push({ workerId: item.workerId, workerName: item.workerName })
+        })
+        this.roleGroups = Object.values(groupMap)
+        if (this.roleGroups.length > 0 && !this.activeRole) {
+          this.activeRole = this.roleGroups[0].roleCode
         }
-        this.roleNameMap = roleMap
-        this.workerOptions = (workerRes.rows || []).map(w => ({
-          ...w,
-          workerId: w.id
-        }))
+      })
+    },
+    onWorkerCheckChange() {
+      this.selectedWorkers = this.selectedWorkers.filter(w => this.checkedWorkerIds.includes(w.workerId))
+      this.checkedWorkerIds.forEach(id => {
+        if (!this.selectedWorkers.find(w => w.workerId === id)) {
+          for (const role of this.roleGroups) {
+            const worker = role.workers.find(w => w.workerId === id)
+            if (worker) {
+              this.selectedWorkers.push({ workerId: worker.workerId, workerName: worker.workerName, roleType: role.roleName })
+              break
+            }
+          }
+        }
       })
     },
     cancel() {
@@ -247,6 +298,8 @@ export default {
     reset() {
       this.form = { planId: undefined, cityCounty: undefined, constructionSite: undefined, siteLatitude: undefined, siteLongitude: undefined, planWorkTime: undefined, projectName: undefined, workType: undefined, constructionUnit: undefined, workers: undefined, workContent: undefined, status: "0", remark: undefined }
       this.selectedWorkers = []
+      this.checkedWorkerIds = []
+      this.activeRole = ''
       this.resetForm("form")
     },
     handleQuery() {
@@ -272,7 +325,10 @@ export default {
       this.reset()
       this.loadWorkerOptions()
       const planId = row.planId || this.ids
-      getPlanWorkers(planId).then(r => { this.selectedWorkers = r.data || [] })
+      getPlanWorkers(planId).then(r => {
+        this.selectedWorkers = r.data || []
+        this.checkedWorkerIds = this.selectedWorkers.map(w => w.workerId)
+      })
       getPlan(planId).then(response => {
         this.form = response.data
         this.open = true
@@ -280,7 +336,7 @@ export default {
       })
     },
     handleStatusChange(row, newStatus) {
-      const labels = { '0': '待执行', '1': '进行中', '2': '已完成', '3': '已取消' }
+      const labels = { '0': '待审核', '1': '待执行', '2': '进行中', '3': '已完成', '4': '已取消' }
       this.$modal.confirm('确认将【' + row.projectName + '】状态变更为"' + labels[newStatus] + '"？')
         .then(() => changePlanStatus({ planId: row.planId, status: newStatus }))
         .then(r => { this.getList(); this.$modal.msgSuccess('状态变更成功') })
@@ -311,6 +367,9 @@ export default {
     },
     handleViewAttendance(row) {
       this.$router.push({ path: '/homework/attendance', query: { planId: row.planId } })
+    },
+    handleViewReview(row) {
+      this.$router.push({ path: '/homework/review', query: { planId: row.planId } })
     }
   }
 }

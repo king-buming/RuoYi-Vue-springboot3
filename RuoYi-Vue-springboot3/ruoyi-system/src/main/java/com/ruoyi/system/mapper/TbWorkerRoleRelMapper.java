@@ -29,4 +29,10 @@ public interface TbWorkerRoleRelMapper
 
     /** 查询所有人-角色映射（worker_id + role_name） */
     public List<Map<String, Object>> selectAllWithRoleNames();
+
+    /** 查询某人员已分配的角色编码列表 */
+    public List<String> selectRoleCodesByWorkerId(Long workerId);
+
+    /** 查询所有角色及其下的人员（role_code, role_name, worker_id, worker_name） */
+    public List<Map<String, Object>> selectWorkersByRole();
 }
