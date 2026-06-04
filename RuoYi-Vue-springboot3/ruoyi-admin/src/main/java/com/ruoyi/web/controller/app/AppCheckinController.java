@@ -74,6 +74,8 @@ public class AppCheckinController
         if ("2".equals(checkType)) {
             if (todaySignIn == null) return AjaxResult.error("今日尚未签到，不能签退");
             if (todaySignOut != null) return AjaxResult.error("今日已签退，请勿重复提交");
+            if (System.currentTimeMillis() <= todaySignIn.getCheckTime().getTime())
+                return AjaxResult.error("签退时间必须晚于签到时间");
         }
 
         TbWorkerCheckin c = new TbWorkerCheckin();
