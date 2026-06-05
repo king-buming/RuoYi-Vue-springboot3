@@ -40,7 +40,7 @@ public class AppAuthController
         if (roleIds != null && !roleIds.isEmpty()) {
             for (Long rid : roleIds) {
                 TbWorkerRole r = tbWorkerRoleMapper.selectTbWorkerRoleById(rid);
-                if (r != null && !"0".equals(r.getIsSelfCheckin())) { canSelfCheckin = true; break; }
+                if (r != null && (r.getStatus() == null || "0".equals(r.getStatus())) && "1".equals(r.getIsSelfCheckin())) { canSelfCheckin = true; break; }
             }
         }
         Map<String, Object> data = new HashMap<>();

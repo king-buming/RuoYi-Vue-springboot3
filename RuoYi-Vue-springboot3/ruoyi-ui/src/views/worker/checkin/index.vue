@@ -51,6 +51,12 @@
         <template slot-scope="scope">{{ parseTime(scope.row.checkTime) }}</template>
       </el-table-column>
       <el-table-column label="打卡方式" align="center" prop="checkMethod"/>
+      <el-table-column label="定位" align="center" min-width="150">
+        <template slot-scope="scope">
+          <span v-if="scope.row.latitude && scope.row.longitude">{{ scope.row.latitude }}, {{ scope.row.longitude }}</span>
+          <el-tag v-else type="warning" size="mini">缺GPS定位</el-tag>
+        </template>
+      </el-table-column>
 <el-table-column label="照片" align="center" prop="photoUrl" width="80">
         <template slot-scope="scope"><image-preview :src="scope.row.photoUrl" :width="40" :height="40"/></template>
       </el-table-column>
