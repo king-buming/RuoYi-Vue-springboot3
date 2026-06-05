@@ -9,7 +9,7 @@ import com.ruoyi.common.service.IFaceRecognitionService;
  *
  * @author ruoyi
  */
-@Component
+@Component("stubFaceRecognitionService")
 public class StubFaceRecognitionService implements IFaceRecognitionService
 {
     @Override

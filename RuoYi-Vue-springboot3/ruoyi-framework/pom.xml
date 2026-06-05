@@ -53,6 +53,13 @@
             <artifactId>oshi-core</artifactId>
         </dependency>
 
+        <!-- ONNX Runtime 推理引擎 -->
+        <dependency>
+            <groupId>com.microsoft.onnxruntime</groupId>
+            <artifactId>onnxruntime</artifactId>
+            <version>1.18.0</version>
+        </dependency>
+
         <!-- 系统模块-->
         <dependency>
             <groupId>com.ruoyi</groupId>

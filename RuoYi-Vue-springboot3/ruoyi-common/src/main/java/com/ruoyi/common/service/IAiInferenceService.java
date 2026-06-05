@@ -27,6 +27,13 @@ public interface IAiInferenceService
     AiInferenceResult extractFaceFeature(String modelCode, String faceImgUrl);
 
     /**
+     * 检测图片中是否含有人脸
+     * @param imagePath 图片文件路径
+     * @return true检测到人脸 false未检测到
+     */
+    boolean detectFace(String imagePath);
+
+    /**
      * 检测模型是否可用
      * @param modelCode 模型编码
      * @return true可用 false不可用

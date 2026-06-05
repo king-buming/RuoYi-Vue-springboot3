@@ -12,9 +12,15 @@ import com.ruoyi.common.service.IAiInferenceService;
  *
  * @author ruoyi
  */
-@Component
+@Component("stubAiInferenceService")
 public class StubAiInferenceService implements IAiInferenceService
 {
+    @Override
+    public boolean detectFace(String imagePath)
+    {
+        return false;
+    }
+
     @Override
     public AiInferenceResult infer(String modelCode, String input)
     {
