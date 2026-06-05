@@ -553,7 +553,7 @@ async function loadProjectStatus(){
   }catch(e){}
 }
 
-async function loadNotifications(){   if(!token)return   try{     const r=await api('/app/notification/list');const d=await r.json()     const list=d.data||[];const el=document.getElementById('notifList')     if(!list.length){document.getElementById('noNotifs').style.display='block';el.innerHTML='';return}     document.getElementById('noNotifs').style.display='none'     el.innerHTML=list.map(n=>{       const bg=n.isRead==='0'?'#f0f7ff':'#fff'       return '<div class="record-item" style="background:'+bg+'" onclick="markRead('+n.id+',this)"><div><div class="cname">'+n.title+'</div><div class="cno">'+n.content+'</div><div class="cexpire">'+n.createTime+'</div></div>'+ (n.isRead==='0'?'<span style="color:#007aff;font-size:12px">●</span>':'') +'</div>'     }).join('')     // 更新红点     updateNotifBadge(list.filter(n=>n.isRead==='0').length)   }catch(e){} } async function markRead(id,el){   el.style.background='#fff';el.querySelector('span').style.display='none'   await api('/app/notification/'+id+'/read',{method:'PUT'}) } async function updateNotifBadge(cnt){   const dot=document.getElementById('notifDot')   if(cnt>0){dot.style.display='block'}else{dot.style.display='none'}   // 启动时也查 } async function loadNotifCount(){   try{const r=await api('/app/notification/unread');const d=await r.json()   const cnt=d.data.count||0   document.getElementById('notifBadge').textContent=cnt>0?'有'+cnt+'条未读':'审核结果·证件提醒'   document.getElementById('notifDot').style.display=cnt>0?'block':'none'}catch(e){} } 
+
 async function doAddCert(){
   if(!token)return;
   const certType=document.getElementById('certType').value;
@@ -970,6 +970,35 @@ async function loadNotifCount(){
   const cnt=d.data.count||0;
   document.getElementById('notifBadge').textContent=cnt>0?'有'+cnt+'条未读':'审核结果·证件提醒';
   document.getElementById('notifDot').style.display=cnt>0?'block':'none';
+  }catch(e){}
+}
+async function loadNotifications(){
+  if(!token)return;
+  try{
+    const r=await api("/app/notification/list");const d=await r.json();
+    const list=d.data||[];const el=document.getElementById("notifList");
+    if(!list.length){document.getElementById("noNotifs").style.display="block";el.innerHTML="";return}
+    document.getElementById("noNotifs").style.display="none";
+    el.innerHTML=list.map(n=>{
+      const bg=n.isRead==="0"?"#f0f7ff":"#fff";
+      return "<div class=\"record-item\" style=\"background:"+bg+"\" onclick=\"markRead("+n.id+",this)\"><div><div class=\"cname\">"+n.title+"</div><div class=\"cno\">"+n.content+"</div><div class=\"cexpire\">"+n.createTime+"</div></div>"+(n.isRead==="0"?"<span style=\"color:#007aff;font-size:12px\">●</span>":"")+"</div>";
+    }).join("");
+    updateNotifBadge(list.filter(n=>n.isRead==="0").length);
+  }catch(e){}
+}
+async function markRead(id,el){
+  el.style.background="#fff";el.querySelector("span").style.display="none";
+  await api("/app/notification/"+id+"/read",{method:"PUT"});
+}
+async function updateNotifBadge(cnt){
+  const dot=document.getElementById("notifDot");
+  if(cnt>0){dot.style.display="block"}else{dot.style.display="none"}
+}
+async function loadNotifCount(){
+  try{const r=await api("/app/notification/unread");const d=await r.json();
+  const cnt=d.data.count||0;
+  document.getElementById("notifBadge").textContent=cnt>0?("有"+cnt+"条未读"):"审核结果·证件提醒";
+  document.getElementById("notifDot").style.display=cnt>0?"block":"none";
   }catch(e){}
 }
 </script>
