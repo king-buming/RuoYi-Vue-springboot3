@@ -951,8 +951,8 @@ async function loadNotifications(){
     if(!list.length){document.getElementById('noNotifs').style.display='block';el.innerHTML='';return}
     document.getElementById('noNotifs').style.display='none';
     el.innerHTML=list.map(n=>{
-      const bg=n.isRead==='0'?'#f0f7ff':'#fff';
-      return '<div class="record-item" style="background:'+bg+'" onclick="markRead('+n.id+',this)"><div><div class="cname">'+n.title+'</div><div class="cno">'+n.content+'</div><div class="cexpire">'+n.createTime+'</div></div>'+ (n.isRead==='0'?'<span style="color:#007aff;font-size:12px">●</span>':'') +'</div>';
+      const bg=n.isRead==='0'?'#fff':'#fff';
+      return '<div class="record-item" style="background:'+bg+'" onclick="markRead('+n.id+',this)"><div><div class="cname">'+n.title+'</div><div class="cno">'+n.content+'</div><div class="cexpire">'+n.createTime+'</div></div>'+ (n.isRead==='0'?'<span style="color:red;font-size:14px">●</span>':'') +'</div>';
     }).join('');
     updateNotifBadge(list.filter(n=>n.isRead==='0').length);
   }catch(e){}
@@ -980,7 +980,7 @@ async function loadNotifications(){
     if(!list.length){document.getElementById("noNotifs").style.display="block";el.innerHTML="";return}
     document.getElementById("noNotifs").style.display="none";
     el.innerHTML=list.map(n=>{
-      const bg=n.isRead==="0"?"#f0f7ff":"#fff";
+      const bg=n.isRead==="0"?"#fff":"#fff";
       return "<div class=\"record-item\" style=\"background:"+bg+"\" onclick=\"markRead("+n.id+",this)\"><div><div class=\"cname\">"+n.title+"</div><div class=\"cno\">"+n.content+"</div><div class=\"cexpire\">"+n.createTime+"</div></div>"+(n.isRead==="0"?"<span style=\"color:#007aff;font-size:12px\">●</span>":"")+"</div>";
     }).join("");
     updateNotifBadge(list.filter(n=>n.isRead==="0").length);
