@@ -8,7 +8,9 @@ import org.springframework.transaction.annotation.Transactional;
 import com.ruoyi.system.mapper.TbWorkerAuditMapper;
 import com.ruoyi.system.mapper.TbWorkerCertMapper;
 import com.ruoyi.system.mapper.TbWorkerMapper;
+import com.ruoyi.system.mapper.TbNotificationMapper;
 import com.ruoyi.system.mapper.TbWorkerRoleRelMapper;
+import com.ruoyi.system.domain.TbNotification;
 import com.ruoyi.system.domain.TbWorker;
 import com.ruoyi.system.domain.TbWorkerAudit;
 import com.ruoyi.system.domain.TbWorkerCert;
@@ -34,6 +36,8 @@ public class TbWorkerAuditServiceImpl implements ITbWorkerAuditService
     private TbWorkerRoleRelMapper roleRelMapper;
     @Autowired
     private ITbWorkerService workerService;
+    @Autowired
+    private TbNotificationMapper notifMapper;
 
     @Override
     public TbWorkerAudit selectTbWorkerAuditById(Long id) {
@@ -72,6 +76,19 @@ public class TbWorkerAuditServiceImpl implements ITbWorkerAuditService
         a.setCreateTime(DateUtils.getNowDate());
         int rows = tbWorkerAuditMapper.insertTbWorkerAudit(a);
         syncStatus(a);
+        // 发送通知
+        if ("worker".equals(a.getBizType()) && a.getWorkerId() != null) {
+            TbNotification n = new TbNotification();
+            n.setWorkerId(a.getWorkerId());
+            n.setBizType("audit");
+            n.setBizId(a.getId());
+            if ("1".equals(a.getAuditStatus())) {
+                n.setType("audit_pass"); n.setTitle("人员审核已通过"); n.setContent(a.getAuditOpinion() != null ? a.getAuditOpinion() : "您的资料审核已通过");
+            } else if ("2".equals(a.getAuditStatus())) {
+                n.setType("audit_reject"); n.setTitle("人员审核已驳回"); n.setContent(a.getAuditOpinion() != null ? a.getAuditOpinion() : "您的资料审核已被驳回，请重新提交");
+            }
+            if (n.getType() != null) notifMapper.insert(n);
+        }
         return rows;
     }
 

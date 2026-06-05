@@ -4,7 +4,9 @@ import java.util.Date;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import com.ruoyi.system.domain.TbNotification;
 import com.ruoyi.system.domain.TbWorkerCert;
+import com.ruoyi.system.mapper.TbNotificationMapper;
 import com.ruoyi.system.mapper.TbWorkerCertMapper;
 
 /**
@@ -16,6 +18,8 @@ public class CertExpiryJob
 {
     @Autowired
     private TbWorkerCertMapper certMapper;
+    @Autowired
+    private TbNotificationMapper notifMapper;
 
     /** 默认 30 天内到期提醒 */
     private static final int WARN_DAYS = 30;
@@ -33,16 +37,18 @@ public class CertExpiryJob
             if (c.getExpireDate() == null || "3".equals(c.getAuditStatus())) continue;
 
             if (c.getExpireDate().before(now)) {
-                // 已过期 → 标记
                 c.setAuditStatus("3");
                 certMapper.updateTbWorkerCert(c);
-                System.out.println("[CertExpiryJob] 过期: certId=" + c.getId() + " expire=" + c.getExpireDate());
+                TbNotification n = new TbNotification();
+                n.setWorkerId(c.getWorkerId()); n.setType("cert_expire"); n.setBizType("cert"); n.setBizId(c.getId());
+                n.setTitle("证件已过期"); n.setContent("您的证件已于 " + new java.text.SimpleDateFormat("yyyy-MM-dd").format(c.getExpireDate()) + " 过期，请尽快更新");
+                notifMapper.insert(n);
                 expired++;
             } else if (c.getExpireDate().getTime() - now.getTime() < warnMs) {
-                // 即将过期 → 仅日志提醒（后续可扩展消息推送）
-                System.out.println("[CertExpiryJob] 即将过期: certId=" + c.getId()
-                    + " expire=" + c.getExpireDate() + " 剩余天数="
-                    + ((c.getExpireDate().getTime() - now.getTime()) / 86400000));
+                TbNotification n = new TbNotification();
+                n.setWorkerId(c.getWorkerId()); n.setType("cert_warn"); n.setBizType("cert"); n.setBizId(c.getId());
+                n.setTitle("证件即将到期"); n.setContent("您的证件将于 " + new java.text.SimpleDateFormat("yyyy-MM-dd").format(c.getExpireDate()) + " 到期（剩余 " + ((c.getExpireDate().getTime() - now.getTime())/86400000) + " 天），请及时更新");
+                notifMapper.insert(n);
                 warned++;
             }
         }

@@ -151,6 +151,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f5f5f5;
 </div>
 
 <!-- 工作台 -->
+<!-- 消息通知 -->
+<div id="notifPage" class="page">
+  <div class="top-bar"><span class="name" onclick="showTab('work')" style="cursor:pointer">← 消息通知</span></div>
+  <div id="notifList"></div>
+  <div class="empty" id="noNotifs" style="display:none">暂无消息</div>
+</div>
 <div id="workPage" class="page">
   <div class="top-bar"><span class="name" id="workName">工作台</span><span id="workAuditBadge"></span></div>
   <div class="grid-3" style="margin-bottom:16px">
@@ -161,7 +167,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f5f5f5;
   <div class="grid-3">
     <div class="gcard" onclick="showPage('projectStatus')"><div class="gicon" style="background:#f3e5f5;color:#9c27b0">👥</div><div class="gtitle">人员状态</div></div>
     <div class="gcard" onclick="alert('班前喊话功能开发中')"><div class="gicon" style="background:#e0f7fa;color:#0097a7">🎥</div><div class="gtitle">班前喊话</div></div>
-    <div class="gcard" onclick="alert('消息通知功能开发中')"><div class="gicon" style="background:#fce4ec;color:#e91e63">🔔</div><div class="gtitle">消息通知</div></div>
+    <div class="gcard" onclick="showPage('notifications')"><div class="gicon" style="background:#fce4ec;color:#e91e63">🔔<span id="notifDot" style="display:none;position:absolute;top:2px;right:2px;width:8px;height:8px;background:red;border-radius:50%"></span></div><div class="gtitle">消息通知</div></div>
   </div>
   <div class="info-section" id="quickActions" style="display:none;margin-top:16px">
     <div class="stitle">快捷操作</div>
@@ -363,6 +369,7 @@ function showTab(name){
   if(name==='me')loadProfile()
   if(name==='cert')initCertDropdown()
   if(name==='projectStatus')loadProjectStatus()
+  if(name==='notifications')loadNotifications()
   if(name==='planList')loadPlanList()
   if(name==='planDetail'||name==='reviewDetail'){}
   if(name==='planCreate'){resetPlanForm()}
@@ -937,3 +944,34 @@ else{showTab('login')}
 </script>
 </body>
 </html>
+
+async function loadNotifications(){
+  if(!token)return
+  try{
+    const r=await api('/app/notification/list');const d=await r.json()
+    const list=d.data||[];const el=document.getElementById('notifList')
+    if(!list.length){document.getElementById('noNotifs').style.display='block';el.innerHTML='';return}
+    document.getElementById('noNotifs').style.display='none'
+    el.innerHTML=list.map(n=>{
+      const bg=n.isRead==='0'?'#f0f7ff':'#fff'
+      return '<div class="record-item" style="background:'+bg+'" onclick="markRead('+n.id+',this)"><div><div class="cname">'+n.title+'</div><div class="cno">'+n.content+'</div><div class="cexpire">'+n.createTime+'</div></div>'+ (n.isRead==='0'?'<span style="color:#007aff;font-size:12px">●</span>':'') +'</div>'
+    }).join('')
+    // 更新红点
+    updateNotifBadge(list.filter(n=>n.isRead==='0').length)
+  }catch(e){}
+}
+async function markRead(id,el){
+  el.style.background='#fff';el.querySelector('span').style.display='none'
+  await api('/app/notification/'+id+'/read',{method:'PUT'})
+}
+async function updateNotifBadge(cnt){
+  const dot=document.getElementById('notifDot')
+  if(cnt>0){dot.style.display='block'}else{dot.style.display='none'}
+  // 启动时也查
+}
+async function loadNotifCount(){
+  try{const r=await api('/app/notification/unread');const d=await r.json()
+  const cnt=d.data.count||0
+  document.getElementById('notifBadge').textContent=cnt>0?'有'+cnt+'条未读':'审核结果·证件提醒'
+  document.getElementById('notifDot').style.display=cnt>0?'block':'none'}catch(e){}
+}
