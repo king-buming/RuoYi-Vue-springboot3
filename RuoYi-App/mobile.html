@@ -58,6 +58,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f5f5f5;
 .cert-item .cname{font-size:14px;font-weight:bold;color:#333}
 .cert-item .cno{font-size:12px;color:#666;margin-top:4px}
 .cert-item .cexpire{font-size:12px;color:#ff9500;margin-top:2px}
+.cert-actions{display:flex;flex-direction:column;align-items:flex-end;gap:8px;margin-left:10px}
+.cert-edit{border:none;border-radius:14px;padding:5px 13px;background:#eef5ff;color:#007aff;font-size:12px}
+.delete-cert-btn{display:none;background:#fff2f0;color:#ff3b30}
+.cert-thumb{width:50px;height:35px;object-fit:cover;border-radius:4px;cursor:pointer}
+.img-preview-overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);display:none;align-items:center;justify-content:center;z-index:999;padding:20px}
+.img-preview-overlay img{max-width:100%;max-height:100%;border-radius:8px}
 
 .tab-bar{position:fixed;bottom:0;left:0;right:0;height:60px;background:#fff;display:flex;border-top:1px solid #e5e5e5;z-index:100}
 .tab-bar .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;color:#999;text-decoration:none;cursor:pointer;position:relative}
@@ -118,6 +124,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f5f5f5;
 </style>
 </head>
 <body>
+
+<div id="imgPreviewOverlay" class="img-preview-overlay" onclick="closeImagePreview()">
+  <img id="imgPreviewLarge" src="">
+</div>
 
 <!-- Login -->
 <div id="loginPage" class="page active">
@@ -283,15 +293,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f5f5f5;
   <div id="certList"></div>
   <div class="empty" id="noCerts" style="display:none">暂无</div>
   <div class="btn-row" style="margin-top:16px">
-    <button class="btn" onclick="showPage('idcard')">📷 上传身份证</button>
-    <button class="btn" onclick="showPage('cert')">📄 上传资质</button>
+    <button class="btn" onclick="openIdcardCreate()">📷 上传身份证</button>
+    <button class="btn" onclick="openCertCreate()">📄 上传资质</button>
   </div>
 </div>
 
 <!-- Upload ID Card -->
 <div id="idcardPage" class="page">
   <div class="top-bar">
-    <span class="name">上传身份证</span>
+    <span class="name" id="idcardTitle">上传身份证</span>
     <a href="#" onclick="showTab('me')" style="font-size:14px;color:#007aff;text-decoration:none">← 返回</a>
   </div>
   <div class="form-box">
@@ -299,6 +309,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f5f5f5;
     <label>到期日期</label><input id="idcardExpire" type="date">
     <label>人像面</label><input id="idcardFront" type="file" accept="image/*">
     <label>国徽面</label><input id="idcardBack" type="file" accept="image/*">
+    <div id="idcardEditTip" style="display:none;color:#999;font-size:12px;margin:-6px 0 12px">修改时不重新选择图片，则沿用原照片。</div>
     <button class="btn" onclick="doUploadIdcard()" id="idcardBtn">提 交</button>
   </div>
 </div>
@@ -318,7 +329,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f5f5f5;
 <!-- Upload Cert -->
 <div id="certPage" class="page">
   <div class="top-bar">
-    <span class="name">上传资质</span>
+    <span class="name" id="certTitle">上传资质</span>
     <a href="#" onclick="showTab('me')" style="font-size:14px;color:#007aff;text-decoration:none">← 返回</a>
   </div>
   <div class="form-box">
@@ -328,7 +339,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f5f5f5;
     <label>发证日期</label><input id="issueDate" type="date">
     <label>过期日期</label><input id="expireDate" type="date">
     <label>证件照片（可多选）</label><input id="certImgFile" type="file" accept="image/*" multiple style="margin-bottom:16px">
+    <div id="certEditTip" style="display:none;color:#999;font-size:12px;margin:-6px 0 12px">修改时不重新选择图片，则沿用原照片。</div>
     <button class="btn" onclick="doAddCert()" id="certBtn">提 交</button>
+    <button class="btn delete-cert-btn" onclick="deleteCurrentCert()" id="certDeleteBtn">删除该资质</button>
   </div>
 </div>
 
@@ -352,7 +365,21 @@ const p=n=>n<10?'0'+n:''+n;
 const auditLabels={0:['待审核','warn'],1:['已通过','ok'],2:['已驳回','err'],3:['已过期','err']};
 let certMap={}; // 动态加载
 let certOptions=[]; // 证件类型下拉选项
+let certEditId=null, certEditImg='';
+let idcardEditFrontId=null, idcardEditBackId=null, idcardEditFrontImg='', idcardEditBackImg='';
 function certName(code){return certMap[code]||code}
+function splitImgs(img){return String(img||'').split(',').filter(Boolean)}
+function firstImg(img){const imgs=splitImgs(img);return imgs[0]||''}
+function escJs(s){return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'")}
+function previewImage(url){
+  if(!url)return;
+  document.getElementById('imgPreviewLarge').src=url;
+  document.getElementById('imgPreviewOverlay').style.display='flex';
+}
+function closeImagePreview(){
+  document.getElementById('imgPreviewOverlay').style.display='none';
+  document.getElementById('imgPreviewLarge').src='';
+}
 // 加载字典
 (async function(){
   try{const r=await fetch(API+'/app/common/dicts?types=worker_cert_type');const d=await r.json();
@@ -387,6 +414,75 @@ function initCertDropdown(){
   sel.innerHTML='<option value="">请选择证件类型</option>';
   const list=Object.entries(certMap).filter(([k])=>k!=='id_card');
   list.forEach(([v,l])=>{sel.innerHTML+='<option value="'+v+'">'+l+'</option>'})
+}
+
+function resetCertForm(){
+  certEditId=null;certEditImg='';
+  document.getElementById('certTitle').textContent='上传资质';
+  document.getElementById('certBtn').textContent='提 交';
+  document.getElementById('certEditTip').style.display='none';
+  document.getElementById('certDeleteBtn').style.display='none';
+  document.getElementById('certType').value='';
+  document.getElementById('certNo').value='';
+  document.getElementById('issueDate').value='';
+  document.getElementById('expireDate').value='';
+  document.getElementById('certImgFile').value='';
+}
+function openCertCreate(){showPage('cert');resetCertForm()}
+async function openCertEdit(id){
+  initCertDropdown();resetCertForm();certEditId=id;
+  document.getElementById('certTitle').textContent='修改资质';
+  document.getElementById('certBtn').textContent='提交修改';
+  document.getElementById('certEditTip').style.display='block';
+  document.getElementById('certDeleteBtn').style.display='block';
+  try{
+    const r=await api('/app/worker/certs/'+id);const d=await r.json();
+    if(d.code===200){
+      showPage('cert');
+      const c=d.data||{};certEditImg=c.certImg||'';
+      document.getElementById('certType').value=c.certType||'';
+      document.getElementById('certNo').value=c.certNo||'';
+      document.getElementById('issueDate').value=c.issueDate||'';
+      document.getElementById('expireDate').value=c.expireDate||'';
+    }else{alert(d.msg||'证件不存在')}
+  }catch(e){alert('加载失败')}
+}
+async function deleteCurrentCert(){
+  if(!certEditId)return;
+  if(!confirm('确定删除该资质证书吗？删除后如需使用需要重新上传。'))return;
+  try{
+    const r=await api('/app/worker/certs/'+certEditId,{method:'DELETE'});
+    const d=await r.json();
+    if(d.code===200){alert('已删除');resetCertForm();showTab('me')}else{alert(d.msg||'删除失败')}
+  }catch(e){alert('网络错误')}
+}
+function resetIdcardForm(){
+  idcardEditFrontId=null;idcardEditBackId=null;idcardEditFrontImg='';idcardEditBackImg='';
+  document.getElementById('idcardTitle').textContent='上传身份证';
+  document.getElementById('idcardBtn').textContent='提 交';
+  document.getElementById('idcardEditTip').style.display='none';
+  document.getElementById('idcardNo').value='';
+  document.getElementById('idcardExpire').value='';
+  document.getElementById('idcardFront').value='';
+  document.getElementById('idcardBack').value='';
+}
+function openIdcardCreate(){resetIdcardForm();showPage('idcard')}
+async function openIdcardEdit(){
+  resetIdcardForm();
+  document.getElementById('idcardTitle').textContent='修改身份证';
+  document.getElementById('idcardBtn').textContent='提交修改';
+  document.getElementById('idcardEditTip').style.display='block';
+  try{
+    const r=await api('/app/worker/certs');const d=await r.json();
+    if(d.code===200){
+      const list=(d.data||[]).filter(c=>c.certType==='id_card');
+      const front=list.find(c=>(c.remark||'').indexOf('人像')>=0)||list[0];
+      const back=list.find(c=>(c.remark||'').indexOf('国徽')>=0)||list.find(c=>front&&c.id!==front.id);
+      if(front){idcardEditFrontId=front.id;idcardEditFrontImg=front.certImg||'';document.getElementById('idcardNo').value=front.certNo||'';document.getElementById('idcardExpire').value=front.expireDate||''}
+      if(back){idcardEditBackId=back.id;idcardEditBackImg=back.certImg||'';if(!document.getElementById('idcardNo').value)document.getElementById('idcardNo').value=back.certNo||'';if(!document.getElementById('idcardExpire').value)document.getElementById('idcardExpire').value=back.expireDate||''}
+      showPage('idcard');
+    }else{alert(d.msg||'身份证不存在')}
+  }catch(e){alert('加载失败')}
 }
 
 async function uploadImg(file){
@@ -516,7 +612,8 @@ async function loadProfile(){
     else{document.getElementById('noIdcards').style.display='none';icEl.innerHTML=idcards.map(c=>{
       const[a,cls]=auditLabels[c.auditStatus]||[c.auditStatus,''];
       const side=c.remark||'';
-      return '<div class="cert-item"><div style="display:flex;align-items:center;gap:10px">'+(c.certImg?'<img src="'+c.certImg+'" style="width:50px;height:35px;object-fit:cover;border-radius:4px">':'')+'<div><div class="cname">'+(side?side:'身份证')+'</div><div class="cno">编号: '+(c.certNo||'-')+'</div><div class="cexpire">到期: '+(c.expireDate||'-')+'</div></div></div><span class="badge '+cls+'">'+a+'</span></div>'
+      const img=firstImg(c.certImg);
+      return '<div class="cert-item"><div style="display:flex;align-items:center;gap:10px">'+(img?'<img src="'+img+'" class="cert-thumb" onclick="previewImage(\''+escJs(img)+'\')">':'')+'<div><div class="cname">'+(side?side:'身份证')+'</div><div class="cno">编号: '+(c.certNo||'-')+'</div><div class="cexpire">到期: '+(c.expireDate||'-')+'</div></div></div><div class="cert-actions"><span class="badge '+cls+'">'+a+'</span><button class="cert-edit" onclick="openIdcardEdit()">修改</button></div></div>'
     }).join('')}
 
     // 资质列表
@@ -524,7 +621,8 @@ async function loadProfile(){
     if(!certs.length){document.getElementById('noCerts').style.display='block';el.innerHTML=''}
     else{document.getElementById('noCerts').style.display='none';el.innerHTML=certs.map(c=>{
       const[a,cls]=auditLabels[c.auditStatus]||[c.auditStatus,''];
-      return '<div class="cert-item"><div style="display:flex;align-items:center;gap:10px">'+(c.certImg?'<img src="'+c.certImg+'" style="width:50px;height:35px;object-fit:cover;border-radius:4px">':'')+'<div><div class="cname">'+(certName(c.certType)||c.certType)+'</div><div class="cno">编号: '+(c.certNo||'-')+'</div><div class="cexpire">到期: '+(c.expireDate||'-')+'</div></div></div><span class="badge '+cls+'">'+a+'</span></div>'
+      const img=firstImg(c.certImg);
+      return '<div class="cert-item"><div style="display:flex;align-items:center;gap:10px">'+(img?'<img src="'+img+'" class="cert-thumb" onclick="previewImage(\''+escJs(img)+'\')">':'')+'<div><div class="cname">'+(certName(c.certType)||c.certType)+'</div><div class="cno">编号: '+(c.certNo||'-')+'</div><div class="cexpire">到期: '+(c.expireDate||'-')+'</div></div></div><div class="cert-actions"><span class="badge '+cls+'">'+a+'</span><button class="cert-edit" onclick="openCertEdit('+c.id+')">修改</button></div></div>'
     }).join('')}
   }catch(e){}
 }
@@ -568,7 +666,7 @@ async function doAddCert(){
   const expireDate=document.getElementById('expireDate').value;
   if(!certType||!certNo){alert('请填写证件类型和编号');return}
   const btn=document.getElementById('certBtn');btn.disabled=true;btn.textContent='上传中...';
-  let certImg='';
+  let certImg=certEditImg||'';
   const files=document.getElementById('certImgFile').files;
   if(files.length>0){
     const urls=[]
@@ -577,10 +675,12 @@ async function doAddCert(){
     certImg=urls.join(',')
   }
   try{
-    const r=await api('/app/worker/certs',{method:'POST',body:{certType,certNo,issueDate,expireDate,certImg}});
-    const d=await r.json();btn.disabled=false;btn.textContent='提 交';
-    if(d.code===200){alert('上传成功!');showTab('me')}else{alert(d.msg||'失败')}
-  }catch(e){btn.disabled=false;btn.textContent='提 交';alert('网络错误')}
+    const path='/app/worker/certs'+(certEditId?'/'+certEditId:'');
+    const method=certEditId?'PUT':'POST';
+    const r=await api(path,{method,body:{certType,certNo,issueDate,expireDate,certImg}});
+    const d=await r.json();btn.disabled=false;btn.textContent=certEditId?'提交修改':'提 交';
+    if(d.code===200){alert(certEditId?'修改已提交，等待审核!':'上传成功!');resetCertForm();showTab('me')}else{alert(d.msg||'失败')}
+  }catch(e){btn.disabled=false;btn.textContent=certEditId?'提交修改':'提 交';alert('网络错误')}
 }
 
 async function doUploadIdcard(){
@@ -589,16 +689,20 @@ async function doUploadIdcard(){
   const expireDate=document.getElementById('idcardExpire').value;
   const frontF=document.getElementById('idcardFront').files[0];
   const backF=document.getElementById('idcardBack').files[0];
-  if(!idNo||!frontF||!backF){alert('请填写身份证号并上传人像面和国徽面');return}
+  if(!idNo||(!frontF&&!idcardEditFrontImg)||(!backF&&!idcardEditBackImg)){alert('请填写身份证号并上传人像面和国徽面');return}
   const btn=document.getElementById('idcardBtn');btn.disabled=true;btn.textContent='上传中...';
-  const frontUrl=await uploadImg(frontF);
-  const backUrl=await uploadImg(backF);
+  const frontUrl=frontF?await uploadImg(frontF):idcardEditFrontImg;
+  const backUrl=backF?await uploadImg(backF):idcardEditBackImg;
   if(!frontUrl||!backUrl){btn.disabled=false;btn.textContent='提 交';alert('图片上传失败');return}
   try{
-    await api('/app/worker/certs',{method:'POST',body:{certType:'id_card',certNo:idNo,certImg:frontUrl,expireDate,remark:'人像面'}});
-    await api('/app/worker/certs',{method:'POST',body:{certType:'id_card',certNo:idNo,certImg:backUrl,expireDate,remark:'国徽面'}});
-    btn.disabled=false;btn.textContent='提 交';alert('身份证上传成功!');showTab('me')
-  }catch(e){btn.disabled=false;btn.textContent='提 交';alert('网络错误')}
+    const frontPath='/app/worker/certs'+(idcardEditFrontId?'/'+idcardEditFrontId:'');
+    const backPath='/app/worker/certs'+(idcardEditBackId?'/'+idcardEditBackId:'');
+    const frontMethod=idcardEditFrontId?'PUT':'POST';
+    const backMethod=idcardEditBackId?'PUT':'POST';
+    await api(frontPath,{method:frontMethod,body:{certType:'id_card',certNo:idNo,certImg:frontUrl,expireDate,remark:'人像面'}});
+    await api(backPath,{method:backMethod,body:{certType:'id_card',certNo:idNo,certImg:backUrl,expireDate,remark:'国徽面'}});
+    btn.disabled=false;btn.textContent=idcardEditFrontId||idcardEditBackId?'提交修改':'提 交';alert(idcardEditFrontId||idcardEditBackId?'身份证修改已提交，等待审核!':'身份证上传成功!');resetIdcardForm();showTab('me')
+  }catch(e){btn.disabled=false;btn.textContent=idcardEditFrontId||idcardEditBackId?'提交修改':'提 交';alert('网络错误')}
 }
 
 // ==================== 工作台 & 作业管理 ====================

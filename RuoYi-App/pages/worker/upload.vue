@@ -1,5 +1,6 @@
 <template>
   <view class="container">
+    <view class="page-title">{{ certId ? '修改资质' : '上传资质' }}</view>
     <view class="form">
       <view class="input-group">
         <text class="label">证件类型</text>
@@ -21,7 +22,7 @@
         <text class="label">证件照片</text>
         <view class="img-list">
           <view v-for="(url,i) in imgUrls" :key="i" class="img-item">
-            <image :src="url" class="preview"/>
+            <image :src="url" class="preview" @click.stop="previewImg(i)"/>
             <text class="del" @click="delImg(i)">✕</text>
           </view>
           <view class="upload-box" @click="pickImg" v-if="imgUrls.length<6">
@@ -29,7 +30,8 @@
           </view>
         </view>
       </view>
-      <button class="btn" @click="submit" :disabled="loading">{{loading?'上传中...':'提交'}}</button>
+      <button class="btn" @click="submit" :disabled="loading">{{loading?'提交中...':(certId?'提交修改':'提交')}}</button>
+      <button v-if="certId" class="delete-btn" @click="deleteCert" :disabled="loading">删除该资质</button>
     </view>
   </view>
 </template>
@@ -40,22 +42,52 @@ import upload from '@/utils/upload'
 function authHeader(){return{'Authorization':'Bearer '+(uni.getStorageSync('appToken')||'')}}
 let typeMap={}
 export default {
-  data(){return{typeLabels:[],typeValues:[],typeIdx:-1,certNo:'',issueDate:'',expireDate:'',imgUrls:[],loading:false}},
+  data(){return{certId:null,detailLoaded:false,typeLabels:[],typeValues:[],typeIdx:-1,certNo:'',issueDate:'',expireDate:'',imgUrls:[],loading:false}},
+  onLoad(options){
+    this.certId=options.certId||null
+  },
   async onShow(){
-    if(!Object.keys(typeMap).length){
-      try{const[e,r]=await uni.request({url:config.baseUrl+'/app/common/dicts?types=worker_cert_type'})
-      if(r&&r.data.code===200){
-        const list=(r.data.data['worker_cert_type']||[]).filter(o=>o.value!=='id_card')
-        this.typeLabels=list.map(o=>o.label);this.typeValues=list.map(o=>o.value)
-        list.forEach(o=>{typeMap[o.value]=o.label})
-      }}catch(e){}
-    }
+    await this.loadDict()
+    if(this.certId&&!this.detailLoaded)await this.loadDetail()
   },
   methods:{
-    onType(e){this.typeIdx=e.detail.value},
+    async loadDict(){
+      if(!Object.keys(typeMap).length){
+        try{const[e,r]=await uni.request({url:config.baseUrl+'/app/common/dicts?types=worker_cert_type'})
+        if(r&&r.data.code===200){
+          const list=(r.data.data['worker_cert_type']||[]).filter(o=>o.value!=='id_card')
+          this.typeLabels=list.map(o=>o.label);this.typeValues=list.map(o=>o.value)
+          list.forEach(o=>{typeMap[o.value]=o.label})
+        }}catch(e){}
+      }else{
+        this.typeValues=Object.keys(typeMap).filter(v=>v!=='id_card')
+        this.typeLabels=this.typeValues.map(v=>typeMap[v])
+      }
+    },
+    async loadDetail(){
+      try{
+        const[e,r]=await uni.request({url:config.baseUrl+'/app/worker/certs/'+this.certId,header:authHeader()})
+        if(r&&r.data.code===200){
+          const c=r.data.data||{}
+          this.certNo=c.certNo||''
+          this.issueDate=c.issueDate||''
+          this.expireDate=c.expireDate||''
+          this.imgUrls=c.certImg?String(c.certImg).split(',').filter(Boolean):[]
+          const idx=this.typeValues.indexOf(c.certType)
+          if(idx>=0)this.typeIdx=idx
+          this.detailLoaded=true
+        }else{
+          uni.showToast({title:(r&&r.data&&r.data.msg)||'证件不存在',icon:'none'})
+        }
+      }catch(e){uni.showToast({title:'加载失败',icon:'none'})}
+    },
+    onType(e){this.typeIdx=Number(e.detail.value)},
     onIssue(e){this.issueDate=e.detail.value},
     onExpire(e){this.expireDate=e.detail.value},
     delImg(i){this.imgUrls.splice(i,1)},
+    previewImg(i){
+      if(this.imgUrls.length)uni.previewImage({urls:this.imgUrls,current:this.imgUrls[i]})
+    },
     pickImg(){
       uni.chooseImage({count:6-this.imgUrls.length,sourceType:['camera','album'],success:async res=>{
         uni.showLoading({title:'上传中...'})
@@ -70,12 +102,42 @@ export default {
       this.loading=true
       try{
         const h=authHeader()
-        await uni.request({url:config.baseUrl+'/app/worker/certs',method:'POST',header:h,data:{
+        const body={
           certType:this.typeValues[this.typeIdx],certNo:this.certNo,issueDate:this.issueDate,
           expireDate:this.expireDate,certImg:this.imgUrls.join(',')
-        }})
-        this.loading=false;uni.showToast({title:'上传成功'});setTimeout(()=>uni.navigateBack(),500)
+        }
+        const url=config.baseUrl+'/app/worker/certs'+(this.certId?'/'+this.certId:'')
+        const method=this.certId?'PUT':'POST'
+        const[e,r]=await uni.request({url,method,header:h,data:body})
+        if(r&&r.data.code===200){
+          this.loading=false;uni.showToast({title:this.certId?'修改已提交':'上传成功'});setTimeout(()=>uni.navigateBack(),500)
+        }else{
+          this.loading=false;uni.showToast({title:(r&&r.data&&r.data.msg)||'提交失败',icon:'none'})
+        }
       }catch(e){this.loading=false;uni.showToast({title:'失败',icon:'none'})}
+    },
+    deleteCert(){
+      uni.showModal({
+        title:'确认删除',
+        content:'确定删除该资质证书吗？删除后如需使用需要重新上传。',
+        success:async res=>{
+          if(!res.confirm)return
+          this.loading=true
+          try{
+            const[e,r]=await uni.request({url:config.baseUrl+'/app/worker/certs/'+this.certId,method:'DELETE',header:authHeader()})
+            this.loading=false
+            if(r&&r.data.code===200){
+              uni.showToast({title:'已删除'})
+              setTimeout(()=>uni.navigateBack(),500)
+            }else{
+              uni.showToast({title:(r&&r.data&&r.data.msg)||'删除失败',icon:'none'})
+            }
+          }catch(e){
+            this.loading=false
+            uni.showToast({title:'删除失败',icon:'none'})
+          }
+        }
+      })
     }
   }
 }
@@ -83,6 +145,7 @@ export default {
 
 <style>
 .container{padding:20rpx;min-height:100vh;background:#f5f5f5}
+.page-title{font-size:34rpx;font-weight:bold;color:#222;margin-bottom:16rpx}
 .form{background:#fff;border-radius:12rpx;padding:24rpx}
 .input-group{margin-bottom:24rpx}
 .label{font-size:28rpx;color:#666;display:block;margin-bottom:8rpx}
@@ -94,4 +157,5 @@ export default {
 .upload-box{width:150rpx;height:150rpx;background:#f0f0f0;border-radius:8rpx;display:flex;align-items:center;justify-content:center}
 .placeholder{color:#999;font-size:26rpx}
 .btn{background:#007aff;color:#fff;border-radius:8rpx;margin-top:20rpx;font-size:30rpx}
+.delete-btn{background:#fff2f0;color:#ff3b30;border-radius:8rpx;margin-top:16rpx;font-size:30rpx}
 </style>

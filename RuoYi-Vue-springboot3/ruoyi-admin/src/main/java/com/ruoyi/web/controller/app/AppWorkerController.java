@@ -54,6 +54,17 @@ public class AppWorkerController
         return AjaxResult.success(certMapper.selectTbWorkerCertList(q));
     }
 
+    @GetMapping("/certs/{certId}")
+    public AjaxResult certDetail(HttpServletRequest req, @PathVariable Long certId) {
+        AjaxResult r = checkActive(req); if (r != null) return r;
+        Long workerId = AppTokenUtil.getWorkerId(req);
+        TbWorkerCert cert = certMapper.selectTbWorkerCertById(certId);
+        if (cert == null || !workerId.equals(cert.getWorkerId())) {
+            return AjaxResult.error("证件不存在或无权限查看");
+        }
+        return AjaxResult.success(cert);
+    }
+
     @PostMapping("/certs")
     public AjaxResult addCert(HttpServletRequest req, @RequestBody TbWorkerCert cert) {
         AjaxResult r = checkActive(req); if (r != null) return r;
@@ -62,6 +73,34 @@ public class AppWorkerController
         cert.setAuditStatus("0");
         certMapper.insertTbWorkerCert(cert);
         return AjaxResult.success(Collections.singletonMap("id", cert.getId()));
+    }
+
+    @PutMapping("/certs/{certId}")
+    public AjaxResult updateCert(HttpServletRequest req, @PathVariable Long certId, @RequestBody TbWorkerCert cert) {
+        AjaxResult r = checkActive(req); if (r != null) return r;
+        Long workerId = AppTokenUtil.getWorkerId(req);
+        TbWorkerCert old = certMapper.selectTbWorkerCertById(certId);
+        if (old == null || !workerId.equals(old.getWorkerId())) {
+            return AjaxResult.error("证件不存在或无权限修改");
+        }
+        cert.setId(certId);
+        cert.setWorkerId(workerId); // 强制用 token 中的身份，避免越权修改
+        cert.setAuditStatus("0"); // 重新上传后必须重新审核
+        cert.setUpdateTime(new Date());
+        certMapper.updateTbWorkerCert(cert);
+        return AjaxResult.success();
+    }
+
+    @DeleteMapping("/certs/{certId}")
+    public AjaxResult deleteCert(HttpServletRequest req, @PathVariable Long certId) {
+        AjaxResult r = checkActive(req); if (r != null) return r;
+        Long workerId = AppTokenUtil.getWorkerId(req);
+        TbWorkerCert old = certMapper.selectTbWorkerCertById(certId);
+        if (old == null || !workerId.equals(old.getWorkerId())) {
+            return AjaxResult.error("证件不存在或无权限删除");
+        }
+        certMapper.deleteTbWorkerCertById(certId);
+        return AjaxResult.success();
     }
 
     @PostMapping("/face")

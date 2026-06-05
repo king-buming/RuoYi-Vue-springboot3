@@ -10,12 +10,15 @@
     <view class="section-title">身份证</view>
     <view class="list" v-if="idcards.length">
       <view class="item" v-for="(c,i) in idcards" :key="i">
-        <image v-if="c.certImg" :src="c.certImg" class="thumb"/>
+        <image v-if="c.certImg" :src="firstImg(c.certImg)" class="thumb" @click.stop="previewCert(c)"/>
         <view class="item-info">
           <text class="name">{{ c.remark||'身份证' }}</text>
           <text class="sub">编号: {{ c.certNo||'-' }}  到期: {{ c.expireDate||'-' }}</text>
         </view>
-        <text :class="'badge '+auditCls(c.auditStatus)">{{ auditLabel(c.auditStatus) }}</text>
+        <view class="right">
+          <text :class="'badge '+auditCls(c.auditStatus)">{{ auditLabel(c.auditStatus) }}</text>
+          <button class="mini-btn" @click.stop="editIdcard">修改</button>
+        </view>
       </view>
     </view>
     <view class="empty" v-else>暂无，<text class="link" @click="goPage('idcard')">上传身份证</text></view>
@@ -23,12 +26,15 @@
     <view class="section-title">资质证书</view>
     <view class="list" v-if="certs.length">
       <view class="item" v-for="(c,i) in certs" :key="i">
-        <image v-if="c.certImg" :src="c.certImg" class="thumb"/>
+        <image v-if="c.certImg" :src="firstImg(c.certImg)" class="thumb" @click.stop="previewCert(c)"/>
         <view class="item-info">
           <text class="name">{{ certName(c.certType) }}</text>
           <text class="sub">编号: {{ c.certNo||'-' }}  到期: {{ c.expireDate||'-' }}</text>
         </view>
-        <text :class="'badge '+auditCls(c.auditStatus)">{{ auditLabel(c.auditStatus) }}</text>
+        <view class="right">
+          <text :class="'badge '+auditCls(c.auditStatus)">{{ auditLabel(c.auditStatus) }}</text>
+          <button class="mini-btn" @click.stop="editCert(c)">修改</button>
+        </view>
       </view>
     </view>
     <view class="empty" v-else>暂无，<text class="link" @click="goPage('upload')">上传资质</text></view>
@@ -71,6 +77,14 @@ export default {
     auditLabel(s){return(labels[s]||[s,''])[0]},
     auditCls(s){return(labels[s]||[s,''])[1]},
     certName(t){return certMap[t]||t},
+    certImgs(img){return String(img||'').split(',').filter(Boolean)},
+    firstImg(img){const imgs=this.certImgs(img);return imgs[0]||''},
+    previewCert(c){
+      const urls=this.certImgs(c.certImg)
+      if(urls.length)uni.previewImage({urls,current:urls[0]})
+    },
+    editIdcard(){uni.navigateTo({url:'/pages/worker/idcard?mode=edit'})},
+    editCert(c){uni.navigateTo({url:'/pages/worker/upload?certId='+c.id})},
     goPage(p){uni.navigateTo({url:'/pages/worker/'+p})}
   }
 }
@@ -87,8 +101,10 @@ export default {
 .thumb{width:80rpx;height:55rpx;border-radius:6rpx;object-fit:cover}
 .item-info{flex:1}.name{font-size:28rpx;font-weight:bold;color:#333;display:block}
 .sub{font-size:22rpx;color:#666;margin-top:4rpx}
+.right{display:flex;flex-direction:column;align-items:flex-end;gap:8rpx}
 .badge{font-size:22rpx;padding:4rpx 16rpx;border-radius:20rpx}
 .badge.warn{background:#fff3e0;color:#ff9500}.badge.ok{background:#e8f5e9;color:#34c759}.badge.err{background:#ffebee;color:#ff3b30}
+.mini-btn{margin:0;padding:0 18rpx;height:46rpx;line-height:46rpx;border-radius:23rpx;background:#eef5ff;color:#007aff;font-size:22rpx}
 .empty{text-align:center;color:#999;font-size:26rpx;padding:16rpx}
 .link{color:#007aff}
 .btn{background:#007aff;color:#fff;border-radius:8rpx;margin-top:16rpx;font-size:30rpx}
