@@ -8,14 +8,36 @@
     </insert>
 
     <select id="selectByWorker" resultType="TbNotification">
-        select * from tb_notification where worker_id = #{workerId} order by create_time desc limit 50
+        select
+            id,
+            worker_id as workerId,
+            type,
+            title,
+            content,
+            is_read as isRead,
+            biz_type as bizType,
+            biz_id as bizId,
+            create_time as createTime
+        from tb_notification
+        where worker_id = #{workerId}
+        order by create_time desc
+        limit 50
     </select>
 
     <select id="countUnread" resultType="int">
         select count(*) from tb_notification where worker_id = #{workerId} and is_read = '0'
     </select>
 
+    <select id="countByWorkerTypeBiz" resultType="int">
+        select count(*)
+        from tb_notification
+        where worker_id = #{workerId}
+          and type = #{type}
+          and biz_type = #{bizType}
+          and biz_id = #{bizId}
+    </select>
+
     <update id="markRead">
-        update tb_notification set is_read = '1' where id = #{id}
+        update tb_notification set is_read = '1' where id = #{id} and worker_id = #{workerId}
     </update>
 </mapper>

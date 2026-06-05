@@ -16,6 +16,7 @@
         <view class="grid-item" v-for="(item, idx) in menus" :key="idx" @click="item.action">
           <view class="grid-icon" :style="{ background: item.bgColor }">
             <uni-icons :type="item.icon" size="28" color="#fff"></uni-icons>
+            <text class="grid-badge" v-if="item.badge && item.badge > 0">{{ item.badge > 99 ? '99+' : item.badge }}</text>
           </view>
           <text class="grid-text">{{ item.text }}</text>
         </view>
@@ -72,10 +73,12 @@ export default {
       unitType: '',
       roleCodes: [],
       roleLabel: '',
+      unreadCount: 0,
       menus: [
         { text: '作业计划', icon: 'paperplane-filled', bgColor: '#007aff', action: () => { uni.navigateTo({ url: '/pages/worker/plan/list' }) } },
         { text: '作业审核', icon: 'checkmarkempty', bgColor: '#34c759', action: () => { uni.navigateTo({ url: '/pages/worker/review/list' }) } },
-        { text: '打卡记录', icon: 'list', bgColor: '#ff9500', action: () => { uni.navigateTo({ url: '/pages/worker/records' }) } }
+        { text: '打卡记录', icon: 'list', bgColor: '#ff9500', action: () => { uni.navigateTo({ url: '/pages/worker/records' }) } },
+        { text: '消息通知', icon: 'sound-filled', bgColor: '#e91e63', badge: 0, action: () => { uni.navigateTo({ url: '/pages/worker/notification' }) } }
       ]
     }
   },
@@ -95,7 +98,11 @@ export default {
   methods: {
     async refresh() {
       const token = uni.getStorageSync('appToken')
-      if (!token) { this.workerName = ''; return }
+      if (!token) {
+        this.workerName = ''
+        this.setUnreadCount(0)
+        return
+      }
       try {
         const [e1, r1] = await uni.request({ url: config.baseUrl + '/app/auth/me', header: authHeader() })
         if (r1 && r1.data.code === 200) {
@@ -106,6 +113,39 @@ export default {
           this.roleCodes = d.roleCodes || []
           const roleNames = d.roleNames || []
           this.roleLabel = roleNames.length > 0 ? roleNames.join('、') : ''
+        }
+        await this.loadUnreadCount()
+      } catch (e) {}
+    },
+    async loadUnreadCount() {
+      try {
+        const [err, res] = await uni.request({ url: config.baseUrl + '/app/notification/unread', header: authHeader() })
+        if (res && res.data.code === 200) {
+          const data = res.data.data || {}
+          this.setUnreadCount(Number(data.count || 0))
+        } else {
+          this.setUnreadCount(0)
+        }
+      } catch (e) {
+        this.setUnreadCount(0)
+      }
+    },
+    setUnreadCount(count) {
+      const value = Number(count || 0)
+      this.unreadCount = value
+      const index = this.menus.findIndex(m => m.text === '消息通知')
+      if (index !== -1) {
+        this.$set(this.menus[index], 'badge', value)
+      }
+      this.syncWorkbenchTabBadge(value)
+    },
+    syncWorkbenchTabBadge(count) {
+      try {
+        if (count > 0) {
+          uni.setTabBarBadge({ index: 1, text: count > 99 ? '99+' : String(count) })
+        } else {
+          uni.removeTabBarBadge({ index: 1 })
+          uni.hideTabBarRedDot({ index: 1 })
         }
       } catch (e) {}
     },
@@ -133,7 +173,8 @@ export default {
 .section-title { font-size: 30rpx; font-weight: bold; color: #333; margin-bottom: 20rpx; }
 .grid-row { display: flex; justify-content: space-around; }
 .grid-item { display: flex; flex-direction: column; align-items: center; }
-.grid-icon { width: 96rpx; height: 96rpx; border-radius: 20rpx; display: flex; align-items: center; justify-content: center; margin-bottom: 12rpx; }
+.grid-icon { width: 96rpx; height: 96rpx; border-radius: 20rpx; display: flex; align-items: center; justify-content: center; margin-bottom: 12rpx; position: relative; }
+.grid-badge { position: absolute; right: -18rpx; top: -18rpx; min-width: 42rpx; height: 42rpx; line-height: 42rpx; padding: 0 10rpx; border-radius: 24rpx; background: #ff3b30; color: #fff; font-size: 24rpx; font-weight: bold; text-align: center; border: 4rpx solid #fff; box-shadow: 0 4rpx 10rpx rgba(255,59,48,0.35); }
 .grid-text { font-size: 26rpx; color: #333; }
 
 .quick-section { background: #fff; border-radius: 12rpx; padding: 24rpx; margin-bottom: 24rpx; box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.04); }

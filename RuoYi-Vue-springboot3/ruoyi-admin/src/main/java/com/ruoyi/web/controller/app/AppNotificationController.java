@@ -29,8 +29,10 @@ public class AppNotificationController
     }
 
     @PutMapping("/{id}/read")
-    public AjaxResult read(@PathVariable Long id) {
-        notifMapper.markRead(id);
+    public AjaxResult read(@PathVariable Long id, HttpServletRequest req) {
+        Long workerId = AppTokenUtil.getWorkerId(req);
+        if (workerId == null) return AjaxResult.error(401, "未登录");
+        notifMapper.markRead(id, workerId);
         return AjaxResult.success();
     }
 }

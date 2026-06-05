@@ -9,5 +9,7 @@ public interface TbNotificationMapper
     int insert(TbNotification n);
     List<TbNotification> selectByWorker(@Param("workerId") Long workerId);
     int countUnread(@Param("workerId") Long workerId);
-    int markRead(@Param("id") Long id);
+    int markRead(@Param("id") Long id, @Param("workerId") Long workerId);
+    int countByWorkerTypeBiz(@Param("workerId") Long workerId, @Param("type") String type,
+                             @Param("bizType") String bizType, @Param("bizId") Long bizId);
 }

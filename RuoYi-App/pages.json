@@ -12,6 +12,9 @@
     "path": "pages/worker/workbench",
     "style": { "navigationBarTitleText": "工作台" }
   }, {
+    "path": "pages/worker/notification",
+    "style": { "navigationBarTitleText": "消息通知", "enablePullDownRefresh": true }
+  }, {
     "path": "pages/worker/mine",
     "style": { "navigationBarTitleText": "我的" }
   }, {
