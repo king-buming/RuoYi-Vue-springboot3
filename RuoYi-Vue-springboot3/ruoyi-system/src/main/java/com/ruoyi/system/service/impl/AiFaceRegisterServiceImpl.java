@@ -112,13 +112,14 @@ public class AiFaceRegisterServiceImpl implements IAiFaceRegisterService
 
             if (existing != null)
             {
-                return faceRegisterMapper.updateAiFaceRegister(failRecord);
+                faceRegisterMapper.updateAiFaceRegister(failRecord);
             }
             else
             {
                 failRecord.setCreateBy(SecurityUtils.getUsername());
-                return faceRegisterMapper.insertAiFaceRegister(failRecord);
+                faceRegisterMapper.insertAiFaceRegister(failRecord);
             }
+            throw new ServiceException(result.getErrorMessage());
         }
 
         // 6. 写入/更新注册记录
