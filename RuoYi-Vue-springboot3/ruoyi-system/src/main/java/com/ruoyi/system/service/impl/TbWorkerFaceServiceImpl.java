@@ -53,8 +53,39 @@ public class TbWorkerFaceServiceImpl implements ITbWorkerFaceService
     @Override
     public int insertTbWorkerFace(TbWorkerFace tbWorkerFace)
     {
-        tbWorkerFace.setCreateTime(DateUtils.getNowDate());
-        return tbWorkerFaceMapper.insertTbWorkerFace(tbWorkerFace);
+        if (tbWorkerFace.getWorkerId() == null) {
+            tbWorkerFace.setCreateTime(DateUtils.getNowDate());
+            return tbWorkerFaceMapper.insertTbWorkerFace(tbWorkerFace);
+        }
+
+        TbWorkerFace query = new TbWorkerFace();
+        query.setWorkerId(tbWorkerFace.getWorkerId());
+        List<TbWorkerFace> existingFaces = tbWorkerFaceMapper.selectTbWorkerFaceList(query);
+        existingFaces.sort((a, b) -> {
+            Long aid = a.getId() == null ? 0L : a.getId();
+            Long bid = b.getId() == null ? 0L : b.getId();
+            return bid.compareTo(aid);
+        });
+
+        if (existingFaces.isEmpty()) {
+            tbWorkerFace.setCreateTime(DateUtils.getNowDate());
+            return tbWorkerFaceMapper.insertTbWorkerFace(tbWorkerFace);
+        }
+
+        TbWorkerFace savedFace = existingFaces.get(0);
+        savedFace.setFaceImgUrl(tbWorkerFace.getFaceImgUrl());
+        savedFace.setFaceFeature("");
+        savedFace.setCollectTime(tbWorkerFace.getCollectTime());
+        savedFace.setRemark(tbWorkerFace.getRemark());
+        savedFace.setUpdateBy(tbWorkerFace.getUpdateBy());
+        savedFace.setUpdateTime(DateUtils.getNowDate());
+        int rows = tbWorkerFaceMapper.updateTbWorkerFace(savedFace);
+        tbWorkerFace.setId(savedFace.getId());
+
+        for (int i = 1; i < existingFaces.size(); i++) {
+            tbWorkerFaceMapper.deleteTbWorkerFaceById(existingFaces.get(i).getId());
+        }
+        return rows;
     }
 
     /**

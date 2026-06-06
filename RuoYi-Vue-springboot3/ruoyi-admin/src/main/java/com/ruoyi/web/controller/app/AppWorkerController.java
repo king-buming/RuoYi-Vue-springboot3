@@ -107,12 +107,42 @@ public class AppWorkerController
     public AjaxResult addFace(HttpServletRequest req, @RequestBody TbWorkerFace face) {
         AjaxResult r = checkActive(req); if (r != null) return r;
         Long id = AppTokenUtil.getWorkerId(req);
-        face.setWorkerId(id);
-        face.setCollectTime(new Date());
-        faceMapper.insertTbWorkerFace(face);
+        if (face.getFaceImgUrl() == null || face.getFaceImgUrl().trim().isEmpty()) {
+            return AjaxResult.error("请先上传人脸照片");
+        }
+
+        TbWorkerFace q = new TbWorkerFace();
+        q.setWorkerId(id);
+        List<TbWorkerFace> existingFaces = faceMapper.selectTbWorkerFaceList(q);
+        existingFaces.sort((a, b) -> {
+            Long aid = a.getId() == null ? 0L : a.getId();
+            Long bid = b.getId() == null ? 0L : b.getId();
+            return bid.compareTo(aid);
+        });
+
+        TbWorkerFace savedFace;
+        Date now = new Date();
+        if (existingFaces.isEmpty()) {
+            face.setWorkerId(id);
+            face.setCollectTime(now);
+            faceMapper.insertTbWorkerFace(face);
+            savedFace = face;
+        } else {
+            savedFace = existingFaces.get(0);
+            savedFace.setFaceImgUrl(face.getFaceImgUrl());
+            savedFace.setFaceFeature("");
+            savedFace.setCollectTime(now);
+            savedFace.setUpdateTime(now);
+            faceMapper.updateTbWorkerFace(savedFace);
+
+            for (int i = 1; i < existingFaces.size(); i++) {
+                faceMapper.deleteTbWorkerFaceById(existingFaces.get(i).getId());
+            }
+        }
+
         TbWorker w = workerMapper.selectTbWorkerById(id);
         if (w != null) { w.setFaceStatus("1"); workerMapper.updateTbWorker(w); }
-        return AjaxResult.success(Collections.singletonMap("id", face.getId()));
+        return AjaxResult.success(Collections.singletonMap("id", savedFace.getId()));
     }
 
     @GetMapping("/face")
@@ -121,6 +151,11 @@ public class AppWorkerController
         Long id = AppTokenUtil.getWorkerId(req);
         TbWorkerFace q = new TbWorkerFace(); q.setWorkerId(id);
         List<TbWorkerFace> list = faceMapper.selectTbWorkerFaceList(q);
+        list.sort((a, b) -> {
+            Long aid = a.getId() == null ? 0L : a.getId();
+            Long bid = b.getId() == null ? 0L : b.getId();
+            return bid.compareTo(aid);
+        });
         // 始终返回 data 对象，前端判断 faceImgUrl 字段
         TbWorkerFace f = list.isEmpty() ? new TbWorkerFace() : list.get(0);
         return AjaxResult.success(f);
