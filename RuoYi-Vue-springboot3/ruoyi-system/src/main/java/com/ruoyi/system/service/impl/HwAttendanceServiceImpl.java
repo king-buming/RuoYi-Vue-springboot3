@@ -149,9 +149,7 @@ public class HwAttendanceServiceImpl implements IHwAttendanceService
         }
         if (!"1".equals(plan.getStatus()) && !"2".equals(plan.getStatus()))
         {
-            if ("0".equals(plan.getStatus()))
-                throw new ServiceException("该计划尚未通过审核，无法打卡");
-            else if ("4".equals(plan.getStatus()))
+            if ("4".equals(plan.getStatus()))
                 throw new ServiceException("该计划已取消，无法打卡");
             else if ("3".equals(plan.getStatus()))
                 throw new ServiceException("该计划已完成，无法打卡");
@@ -194,9 +192,7 @@ public class HwAttendanceServiceImpl implements IHwAttendanceService
         }
         if (!"1".equals(plan.getStatus()) && !"2".equals(plan.getStatus()))
         {
-            if ("0".equals(plan.getStatus()))
-                throw new ServiceException("该计划尚未通过审核，无法打卡");
-            else if ("4".equals(plan.getStatus()))
+            if ("4".equals(plan.getStatus()))
                 throw new ServiceException("该计划已取消，无法打卡");
             else if ("3".equals(plan.getStatus()))
                 throw new ServiceException("该计划已完成，无法打卡");

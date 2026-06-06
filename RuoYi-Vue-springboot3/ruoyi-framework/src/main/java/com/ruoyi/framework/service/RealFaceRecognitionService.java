@@ -59,10 +59,11 @@ public class RealFaceRecognitionService implements IFaceRecognitionService {
 
             double confidence = ((Number) map.getOrDefault("similarity", 0)).doubleValue();
             String personName = (String) map.getOrDefault("personName", "");
+            Long workerId = map.get("workerId") != null ? ((Number) map.get("workerId")).longValue() : null;
 
-            FaceMatchResult faceResult = FaceMatchResult.success(confidence);
+            FaceMatchResult faceResult = FaceMatchResult.success(confidence, workerId);
             faceResult.setPersonName(personName);
-            log.info("人脸比对成功: {} (confidence={})", personName, confidence);
+            log.info("人脸比对成功: {} (workerId={}, confidence={})", personName, workerId, confidence);
             return faceResult;
 
         } catch (Exception e) {
@@ -92,6 +93,21 @@ public class RealFaceRecognitionService implements IFaceRecognitionService {
     private String resolveToPath(String input) throws IOException {
         if (input == null || input.isEmpty()) {
             throw new IOException("输入图片为空");
+        }
+        // 完整 HTTP(S) URL → 提取路径部分后递归解析
+        if (input.startsWith("http://") || input.startsWith("https://")) {
+            try {
+                String path = new java.net.URI(input).getPath();
+                if (path != null && !path.isEmpty()) {
+                    return resolveToPath(path);
+                }
+            } catch (Exception ignored) {}
+        }
+        // /profile/xxx 相对路径 → 拼接物理路径
+        if (input.startsWith("/profile")) {
+            String relativePath = input.replaceFirst("^/profile/?", "");
+            input = com.ruoyi.common.config.RuoYiConfig.getProfile()
+                    + File.separator + relativePath;
         }
         // 已经是物理文件路径
         if (new File(input).exists()) {

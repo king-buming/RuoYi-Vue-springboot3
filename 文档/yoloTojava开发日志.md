@@ -383,7 +383,116 @@ RuoYi-Vue-springboot3/
 
 ---
 
-## 十四、已知问题
+## 十四、Bug 记录
+
+### Bug #1：人脸录入失败时前端弹窗显示"录入成功"，列表显示"录入失败"（2026-06-05 修复）
+
+**现象**：在人脸注册页面点击"录入"，弹窗提示"人脸录入成功"，但列表中该人员的 AI 录入状态显示"录入失败"，失败原因是"人脸图片文件不存在"。
+
+**根因**：`AiFaceRegisterServiceImpl.registerFace()` 在 AI 推理失败时只写了一条 `register_status='2'` 的失败记录到数据库并正常 `return`，没有抛异常。Controller 收到正常返回 → `success("人脸录入成功")`，与数据库实际状态矛盾。
+
+**调用链**：
+
+```
+AiFaceRegisterController.registerFace()
+  → faceRegisterService.registerFace(workerId, modelCode)
+    → aiInferenceService.extractFaceFeature() 返回 fail("人脸图片文件不存在")
+    → 写入 DB: register_status='2', fail_reason='人脸图片文件不存在'
+    → return 1;  // ← 没有抛异常！
+  → Controller 收到正常返回 → success("人脸录入成功")  // ← Bug!
+```
+
+**修复**（commit `9b7d233`）：在 `AiFaceRegisterServiceImpl` 的 AI 推理失败分支中，写完失败记录后追加 `throw new ServiceException(result.getErrorMessage())`，Controller 的 `try-catch` 捕获后 → `error(msg)` → 前端正确显示错误。
+
+**涉及文件**：`ruoyi-system/.../service/impl/AiFaceRegisterServiceImpl.java`
+
+```java
+// 修复前
+if (existing != null) {
+    return faceRegisterMapper.updateAiFaceRegister(failRecord);  // 正常 return
+} else {
+    return faceRegisterMapper.insertAiFaceRegister(failRecord);  // 正常 return
+}
+
+// 修复后
+if (existing != null) {
+    faceRegisterMapper.updateAiFaceRegister(failRecord);
+} else {
+    faceRegisterMapper.insertAiFaceRegister(failRecord);
+}
+throw new ServiceException(result.getErrorMessage());  // ← 新增
+```
+
+### Bug #2：人脸录入提示"人脸图片文件不存在"（2026-06-06 修复）
+
+**现象**：uni-app 移动端上传人脸照片后，在 PC 管理系统对人员点击"录入"，提示"人脸图片文件不存在: http://localhost:8080/profile/upload/2026/06/06/hg_20260606145145A001.jpg"，但实际上该文件存在于 `uploadPath/upload/2026/06/06/hg_20260606145145A001.jpg`。
+
+**根因**：两点共同导致：
+
+1. **`face.vue` 上传后取了完整 URL 存入数据库**：`result.url`（`http://localhost:8080/profile/upload/...`）被优先于 `result.fileName`（`/profile/upload/...`）选取，导致 `tb_worker_face.face_img_url` 存的是完整 URL 而非相对路径。
+
+2. **`RealAiInferenceService.resolveImageFile()` 不支持完整 URL**：只判断 `startsWith("/profile")`，完整 URL `http://localhost:8080/profile/upload/...` 走不进分支，回退到 `new File("http://...")` → 文件永远不存在。
+
+**修复（2 处）**：
+
+**修复 1 — `RealAiInferenceService.resolveImageFile()`**（`ruoyi-framework/.../RealAiInferenceService.java:259`）：
+
+```java
+// 修复前
+private File resolveImageFile(String faceImgUrl) {
+    if (faceImgUrl == null || faceImgUrl.isEmpty()) return new File("");
+    if (faceImgUrl.startsWith("/profile")) {
+        String profile = RuoYiConfig.getProfile();
+        return new File(profile, faceImgUrl.replaceFirst("^/profile", ""));
+    }
+    return new File(faceImgUrl);
+}
+
+// 修复后
+private File resolveImageFile(String faceImgUrl) {
+    if (faceImgUrl == null || faceImgUrl.isEmpty()) return new File("");
+    // 如果是完整 HTTP(S) URL，提取路径部分（兼容 uni-app 上传返回完整 URL 的场景）
+    if (faceImgUrl.startsWith("http://") || faceImgUrl.startsWith("https://")) {
+        try {
+            faceImgUrl = new java.net.URI(faceImgUrl).getPath();
+        } catch (Exception e) {
+            return new File(faceImgUrl);
+        }
+    }
+    if (faceImgUrl.startsWith("/profile")) {
+        String profile = RuoYiConfig.getProfile();
+        String relativePath = faceImgUrl.replaceFirst("^/profile/?", "");
+        return new File(profile, relativePath);
+    }
+    return new File(faceImgUrl);
+}
+```
+
+改动要点：
+- 新增 HTTP(S) URL 判断：用 `java.net.URI.getPath()` 提取路径部分（如 `/profile/upload/...`）再走后续逻辑
+- `replaceFirst("^/profile", "")` → `replaceFirst("^/profile/?", "")`：去掉 `/profile` 后可能残留的前导 `/`
+
+**修复 2 — `face.vue`**（`RuoYi-App/pages/worker/face.vue:35`）：
+
+```javascript
+// 修复前
+const url = result.url || result.data || result.fileName
+
+// 修复后
+const url = result.fileName || result.url || (result.data && result.data.url)
+```
+
+新上传优先使用 `result.fileName`（相对路径 `/profile/upload/...`），确保数据库存储干净的相对路径。
+
+**涉及文件**：
+| # | 文件 | 类型 |
+|---|------|------|
+| 1 | `ruoyi-framework/.../service/RealAiInferenceService.java` | 修改 |
+| 2 | `RuoYi-App/pages/worker/face.vue` | 修改 |
+
+---
+
+## 十五、环境问题
 
 ### IDEA 报 "程序包org.springframework.beans.factory.annotation不存在"
 
@@ -407,7 +516,7 @@ RuoYi-Vue-springboot3/
 
 ---
 
-## 十五、验证清单
+## 十六、验证清单
 
 | # | 验证项 | 状态 |
 |---|--------|------|

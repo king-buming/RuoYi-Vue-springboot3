@@ -32,8 +32,9 @@ export default {
         uni.showLoading({ title: '上传中...' })
         try {
           const result = await upload({ url: '/common/upload', filePath: res.tempFilePaths[0] })
-          const url = result.url || result.data || result.fileName
-          const [e, r] = await uni.request({ url: config.baseUrl + '/app/worker/face', method: 'POST', header: authHeader(), data: { faceImgUrl: url } })
+          const url = result.fileName || result.url || (result.data && result.data.url)
+          const formData = { faceImgUrl: url };
+          const [e, r] = await uni.request({ url: config.baseUrl + '/app/worker/face', method: 'POST', header: authHeader(), data: formData })
           uni.hideLoading()
           if (r && r.data.code === 200) { uni.showToast({ title: '上传成功' }); this.load() }
           else { uni.showToast({ title: r.data.msg || '失败', icon: 'none' }) }

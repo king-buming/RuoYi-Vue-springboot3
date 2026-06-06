@@ -52,8 +52,8 @@
       <el-table-column label="施工单位" align="center" prop="constructionUnit" show-overflow-tooltip />
       <el-table-column label="状态" align="center" prop="status" width="100">
         <template slot-scope="scope">
-          <el-tag :type="['warning','info','primary','success','danger'][Number(scope.row.status)]">
-            {{ ['待审核','待执行','进行中','已完成','已取消'][Number(scope.row.status)] }}
+          <el-tag :type="['info','primary','success','danger'][Number(scope.row.status) - 1]">
+            {{ ['待执行','进行中','已完成','已取消'][Number(scope.row.status) - 1] }}
           </el-tag>
         </template>
       </el-table-column>
@@ -74,8 +74,8 @@
             <el-dropdown-menu slot="dropdown">
               <el-dropdown-item v-if="scope.row.status === '1'" command="2">开始作业</el-dropdown-item>
               <el-dropdown-item v-if="scope.row.status === '2'" command="3">标记完成</el-dropdown-item>
-              <el-dropdown-item v-if="['0','1','2'].includes(scope.row.status)" command="4">取消计划</el-dropdown-item>
-              <el-dropdown-item v-if="scope.row.status === '4'" command="0">恢复为待审核</el-dropdown-item>
+              <el-dropdown-item v-if="['1','2'].includes(scope.row.status)" command="4">取消计划</el-dropdown-item>
+              <el-dropdown-item v-if="scope.row.status === '4'" command="1">恢复为待执行</el-dropdown-item>
             </el-dropdown-menu>
           </el-dropdown>
           <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['homework:plan:edit']">修改</el-button>
@@ -218,7 +218,7 @@ export default {
         { label: '修复', value: '修复' }, { label: '点火', value: '点火' }
       ],
       statusOptions: [
-        { label: '待审核', value: '0' }, { label: '待执行', value: '1' },
+        { label: '待执行', value: '1' },
         { label: '进行中', value: '2' }, { label: '已完成', value: '3' },
         { label: '已取消', value: '4' }
       ],
@@ -336,7 +336,7 @@ export default {
       })
     },
     handleStatusChange(row, newStatus) {
-      const labels = { '0': '待审核', '1': '待执行', '2': '进行中', '3': '已完成', '4': '已取消' }
+      const labels = { '1': '待执行', '2': '进行中', '3': '已完成', '4': '已取消' }
       this.$modal.confirm('确认将【' + row.projectName + '】状态变更为"' + labels[newStatus] + '"？')
         .then(() => changePlanStatus({ planId: row.planId, status: newStatus }))
         .then(r => { this.getList(); this.$modal.msgSuccess('状态变更成功') })

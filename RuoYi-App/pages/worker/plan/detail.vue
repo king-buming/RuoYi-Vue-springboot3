@@ -28,18 +28,6 @@
       <text v-else class="empty-hint">暂无人员</text>
     </view>
 
-    <!-- 审核信息 -->
-    <view class="section" v-if="review">
-      <view class="section-title">审核信息</view>
-      <view class="info-item">
-        <text class="label">审核状态</text>
-        <text class="val" :class="'review-status-' + review.reviewStatus">{{ getReviewStatusLabel(review.reviewStatus) }}</text>
-      </view>
-      <view class="info-item" v-if="review.applicant"><text class="label">申请人</text><text class="val">{{ review.applicant }}</text></view>
-      <view class="info-item" v-if="review.reviewer"><text class="label">审核人</text><text class="val">{{ review.reviewer }}</text></view>
-      <view class="info-item" v-if="review.reviewTime"><text class="label">审核时间</text><text class="val">{{ formatTime(review.reviewTime) }}</text></view>
-      <view class="info-item" v-if="review.reviewOpinion"><text class="label">审核意见</text><text class="val multiline">{{ review.reviewOpinion }}</text></view>
-    </view>
   </view>
 </template>
 
@@ -53,9 +41,7 @@ export default {
     return {
       plan: {},
       workers: [],
-      review: null,
-      statusLabels: { '0': '待审核', '1': '待执行', '2': '进行中', '3': '已完成', '4': '已取消' },
-      reviewStatusLabels: { '0': '待审核', '1': '已通过', '2': '已驳回' }
+      statusLabels: { '1': '待执行', '2': '进行中', '3': '已完成', '4': '已取消' }
     }
   },
   computed: {
@@ -80,12 +66,10 @@ export default {
           const d = res.data.data
           this.plan = d.plan || {}
           this.workers = d.workers || []
-          this.review = d.review || null
         }
       } catch (e) { uni.showToast({ title: '加载失败', icon: 'none' }) }
     },
     getStatusLabel(v) { return this.statusLabels[v] || v },
-    getReviewStatusLabel(v) { return this.reviewStatusLabels[v] || v },
     formatTime(t) {
       if (!t) return '-'; const d = new Date(t); const p = n => n < 10 ? '0' + n : '' + n
       return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes())

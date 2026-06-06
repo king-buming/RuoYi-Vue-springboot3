@@ -51,7 +51,7 @@ public class HwPlan extends BaseEntity
     /** 作业内容 */
     private String workContent;
 
-    /** 状态（0待审核 1待执行 2进行中 3已完成 4已取消） */
+    /** 状态（1待执行 2进行中 3已完成 4已取消） */
     private String status;
 
     public Long getPlanId()

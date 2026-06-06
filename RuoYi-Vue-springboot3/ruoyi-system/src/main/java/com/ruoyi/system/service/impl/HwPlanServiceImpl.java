@@ -1,15 +1,12 @@
 package com.ruoyi.system.service.impl;
 
-import java.util.Date;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.system.domain.HwPlan;
-import com.ruoyi.system.domain.HwReview;
 import com.ruoyi.system.mapper.HwPlanMapper;
-import com.ruoyi.system.mapper.HwReviewMapper;
 import com.ruoyi.system.service.IHwPlanService;
 
 /**
@@ -22,9 +19,6 @@ public class HwPlanServiceImpl implements IHwPlanService
 {
     @Autowired
     private HwPlanMapper hwPlanMapper;
-
-    @Autowired
-    private HwReviewMapper hwReviewMapper;
 
     @Override
     public List<HwPlan> selectHwPlanList(HwPlan plan)
@@ -42,19 +36,8 @@ public class HwPlanServiceImpl implements IHwPlanService
     public int insertHwPlan(HwPlan plan)
     {
         plan.setCreateBy(SecurityUtils.getUsername());
-        plan.setStatus("0");
-        int rows = hwPlanMapper.insertHwPlan(plan);
-        HwReview review = new HwReview();
-        review.setPlanId(plan.getPlanId());
-        review.setPlanName(plan.getProjectName());
-        review.setWorkType(plan.getWorkType());
-        review.setConstructionUnit(plan.getConstructionUnit());
-        review.setApplicant(plan.getCreateBy());
-        review.setApplyTime(new Date());
-        review.setReviewStatus("0");
-        review.setCreateBy(plan.getCreateBy());
-        hwReviewMapper.insertHwReview(review);
-        return rows;
+        plan.setStatus("1");
+        return hwPlanMapper.insertHwPlan(plan);
     }
 
     @Override
@@ -90,16 +73,16 @@ public class HwPlanServiceImpl implements IHwPlanService
         {
             throw new ServiceException("已完成的计划不可变更状态");
         }
-        // 已取消不可再变更（除管理员恢复为待审核外）
-        if ("4".equals(current) && !"0".equals(status))
+        // 已取消只能恢复为待执行
+        if ("4".equals(current) && !"1".equals(status))
         {
-            throw new ServiceException("已取消的计划不可变更状态");
+            throw new ServiceException("已取消的计划只能恢复为待执行");
         }
         switch (status)
         {
             case "1":
-                if (!"0".equals(current))
-                    throw new ServiceException("只有待审核的计划才能标记为待执行");
+                if (!"4".equals(current))
+                    throw new ServiceException("只有已取消的计划才能恢复为待执行");
                 break;
             case "2":
                 if (!"1".equals(current))
@@ -112,10 +95,6 @@ public class HwPlanServiceImpl implements IHwPlanService
             case "4":
                 if ("3".equals(current) || "4".equals(current))
                     throw new ServiceException("当前状态不可取消");
-                break;
-            case "0":
-                if (!"4".equals(current))
-                    throw new ServiceException("只有已取消的计划才能恢复为待审核");
                 break;
             default:
                 throw new ServiceException("无效的状态值");

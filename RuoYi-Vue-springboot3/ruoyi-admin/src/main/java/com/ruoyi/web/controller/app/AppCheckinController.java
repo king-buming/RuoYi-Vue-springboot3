@@ -24,6 +24,7 @@ public class AppCheckinController
     @Autowired private TbWorkerRoleMapper workerRoleMapper;
     @Autowired private TbWorkerRoleRelMapper workerRoleRelMapper;
     @Autowired private ITbWorkerService workerService;
+    @Autowired private com.ruoyi.common.service.IFaceRecognitionService faceRecognitionService;
 
     /** 今日打卡状态 */
     @GetMapping("/today")
@@ -87,6 +88,24 @@ public class AppCheckinController
         BigDecimal latitude = parseDecimal(body.get("latitude"));
         BigDecimal longitude = parseDecimal(body.get("longitude"));
         if (photoUrl.trim().isEmpty()) return AjaxResult.error("请先拍照上传现场照片");
+
+        // 人脸识别验证
+        try {
+            com.ruoyi.common.service.FaceMatchResult fr = faceRecognitionService.compareFace(photoUrl, null);
+            if (!fr.isMatched()) {
+                return AjaxResult.error("人脸验证失败，未在底库中找到匹配人员，请先在PC端「AI算法仓→人脸注册」录入人脸");
+            }
+            if (fr.getWorkerId() == null || !fr.getWorkerId().equals(wid)) {
+                String hint = fr.getPersonName() != null && !fr.getPersonName().isEmpty()
+                    ? "（识别为：" + fr.getPersonName() + "）" : "";
+                return AjaxResult.error("人脸验证不通过，打卡照片与本人不符" + hint);
+            }
+        } catch (com.ruoyi.common.exception.ServiceException e) {
+            return AjaxResult.error(e.getMessage());
+        } catch (Exception e) {
+            return AjaxResult.error("人脸识别服务异常，请稍后重试");
+        }
+
         boolean missingGps = latitude == null || longitude == null;
 
         // 查今天已有记录

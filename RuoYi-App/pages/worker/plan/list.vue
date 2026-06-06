@@ -51,13 +51,12 @@ export default {
       canCreate: false,
       statusOptions: [
         { label: '全部', value: '' },
-        { label: '待审核', value: '0' },
         { label: '待执行', value: '1' },
         { label: '进行中', value: '2' },
         { label: '已完成', value: '3' },
         { label: '已取消', value: '4' }
       ],
-      statusLabels: { '0': '待审核', '1': '待执行', '2': '进行中', '3': '已完成', '4': '已取消' }
+      statusLabels: { '1': '待执行', '2': '进行中', '3': '已完成', '4': '已取消' }
     }
   },
   onShow() {

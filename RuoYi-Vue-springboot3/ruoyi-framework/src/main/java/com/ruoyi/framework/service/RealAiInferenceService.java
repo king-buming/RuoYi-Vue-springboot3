@@ -258,9 +258,18 @@ public class RealAiInferenceService implements IAiInferenceService {
 
     private File resolveImageFile(String faceImgUrl) {
         if (faceImgUrl == null || faceImgUrl.isEmpty()) return new File("");
+        // 如果是完整 HTTP(S) URL，提取路径部分（兼容 uni-app 上传返回完整 URL 的场景）
+        if (faceImgUrl.startsWith("http://") || faceImgUrl.startsWith("https://")) {
+            try {
+                faceImgUrl = new java.net.URI(faceImgUrl).getPath();
+            } catch (Exception e) {
+                return new File(faceImgUrl);
+            }
+        }
         if (faceImgUrl.startsWith("/profile")) {
             String profile = RuoYiConfig.getProfile();
-            return new File(profile, faceImgUrl.replaceFirst("^/profile", ""));
+            String relativePath = faceImgUrl.replaceFirst("^/profile/?", "");
+            return new File(profile, relativePath);
         }
         return new File(faceImgUrl);
     }

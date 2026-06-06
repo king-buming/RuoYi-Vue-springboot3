@@ -83,7 +83,7 @@ export default {
             uni.showLoading({ title: '上传中...' })
             try {
               const result = await upload({ url: '/common/upload', filePath: res.tempFilePaths[0] })
-              const url = result.url || result.data || result.fileName
+              const url = result.fileName || result.url || (result.data && result.data.url)
               this.photoUrl = url
               uni.hideLoading()
               resolve(url)
@@ -135,8 +135,8 @@ export default {
       try {
         const [err, res] = await uni.request({ url: config.baseUrl + '/app/checkin/' + action, method: 'POST', header: authHeader(), data: { checkMethod: 'H5', photoUrl: checkinPhotoUrl, latitude: loc.latitude || null, longitude: loc.longitude || null } })
         this.loading = false
-        if (res && res.data && res.data.code === 200) { uni.showToast({ title: action === 'signIn' ? '签到成功' : '签退成功' }); this.photoUrl = ''; this.refresh() }
-        else { uni.showToast({ title: (res && res.data && res.data.msg) || '失败', icon: 'none' }) }
+        if (res && res.data && res.data.code === 200) { uni.showToast({ title: (action === 'signIn' ? '签到成功' : '签退成功') + '，人脸验证通过' }); this.photoUrl = ''; this.refresh() }
+        else { uni.showToast({ title: (res && res.data && res.data.msg) || '失败', icon: 'none', duration: 3000 }) }
       } catch (e) { this.loading = false; uni.showToast({ title: '网络错误', icon: 'none' }) }
     },
     doSignIn() { this.doCheck('signIn') },

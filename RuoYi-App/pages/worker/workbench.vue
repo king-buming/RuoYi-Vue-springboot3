@@ -34,14 +34,6 @@
         </view>
         <uni-icons type="arrowright" size="16" color="#ccc"></uni-icons>
       </view>
-      <view class="action-card" @click="goReviewList" v-if="isApprover">
-        <view class="action-icon" style="background:#e8f8ec"><uni-icons type="checkmarkempty" size="22" color="#34c759"></uni-icons></view>
-        <view class="action-body">
-          <text class="action-title">待审核计划</text>
-          <text class="action-desc">审核施工方提交的作业计划</text>
-        </view>
-        <uni-icons type="arrowright" size="16" color="#ccc"></uni-icons>
-      </view>
       <view class="action-card" @click="goRecords">
         <view class="action-icon" style="background:#fff3e0"><uni-icons type="list" size="22" color="#ff9500"></uni-icons></view>
         <view class="action-body">
@@ -76,7 +68,6 @@ export default {
       unreadCount: 0,
       menus: [
         { text: '作业计划', icon: 'paperplane-filled', bgColor: '#007aff', action: () => { uni.navigateTo({ url: '/pages/worker/plan/list' }) } },
-        { text: '作业审核', icon: 'checkmarkempty', bgColor: '#34c759', action: () => { uni.navigateTo({ url: '/pages/worker/review/list' }) } },
         { text: '打卡记录', icon: 'list', bgColor: '#ff9500', action: () => { uni.navigateTo({ url: '/pages/worker/records' }) } },
         { text: '消息通知', icon: 'sound-filled', bgColor: '#e91e63', badge: 0, action: () => { uni.navigateTo({ url: '/pages/worker/notification' }) } }
       ]
@@ -90,9 +81,6 @@ export default {
     canCreatePlan() {
       return this.unitType === '3' && !(this.roleCodes.length === 1 && this.roleCodes[0] === 'worker')
     },
-    isApprover() {
-      return this.roleCodes.includes('approver')
-    }
   },
   onShow() { this.refresh() },
   methods: {
@@ -150,7 +138,6 @@ export default {
       } catch (e) {}
     },
     goCreatePlan() { uni.navigateTo({ url: '/pages/worker/plan/create' }) },
-    goReviewList() { uni.navigateTo({ url: '/pages/worker/review/list' }) },
     goRecords() { uni.navigateTo({ url: '/pages/worker/records' }) },
     goLogin() { uni.reLaunch({ url: '/pages/worker/login' }) }
   }

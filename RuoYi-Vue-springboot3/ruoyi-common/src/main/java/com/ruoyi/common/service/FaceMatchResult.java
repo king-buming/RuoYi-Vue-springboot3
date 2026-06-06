@@ -11,12 +11,22 @@ public class FaceMatchResult
     private double confidence;
     private String personName;
     private String errorMessage;
+    private Long workerId;
 
     public static FaceMatchResult success(double confidence)
     {
         FaceMatchResult result = new FaceMatchResult();
         result.setMatched(true);
         result.setConfidence(confidence);
+        return result;
+    }
+
+    public static FaceMatchResult success(double confidence, Long workerId)
+    {
+        FaceMatchResult result = new FaceMatchResult();
+        result.setMatched(true);
+        result.setConfidence(confidence);
+        result.setWorkerId(workerId);
         return result;
     }
 
@@ -66,5 +76,15 @@ public class FaceMatchResult
     public void setErrorMessage(String errorMessage)
     {
         this.errorMessage = errorMessage;
+    }
+
+    public Long getWorkerId()
+    {
+        return workerId;
+    }
+
+    public void setWorkerId(Long workerId)
+    {
+        this.workerId = workerId;
     }
 }

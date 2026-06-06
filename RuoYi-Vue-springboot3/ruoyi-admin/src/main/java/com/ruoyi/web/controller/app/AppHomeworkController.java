@@ -11,15 +11,12 @@ import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.system.domain.HwPlan;
 import com.ruoyi.system.domain.HwPlanWorker;
-import com.ruoyi.system.domain.HwReview;
 import com.ruoyi.system.domain.TbWorker;
 import com.ruoyi.system.mapper.HwPlanMapper;
 import com.ruoyi.system.mapper.HwPlanWorkerMapper;
-import com.ruoyi.system.mapper.HwReviewMapper;
 import com.ruoyi.system.mapper.TbWorkerMapper;
 import com.ruoyi.system.mapper.TbWorkerRoleRelMapper;
 import com.ruoyi.system.service.IHwPlanService;
-import com.ruoyi.system.service.IHwReviewService;
 
 /**
  * 移动端作业管理接口（/app/homework/*）
@@ -32,9 +29,7 @@ import com.ruoyi.system.service.IHwReviewService;
 public class AppHomeworkController extends BaseController
 {
     @Autowired private IHwPlanService hwPlanService;
-    @Autowired private IHwReviewService hwReviewService;
     @Autowired private HwPlanMapper hwPlanMapper;
-    @Autowired private HwReviewMapper hwReviewMapper;
     @Autowired private HwPlanWorkerMapper hwPlanWorkerMapper;
     @Autowired private TbWorkerMapper tbWorkerMapper;
     @Autowired private TbWorkerRoleRelMapper tbWorkerRoleRelMapper;
@@ -68,12 +63,9 @@ public class AppHomeworkController extends BaseController
         HwPlan plan = hwPlanMapper.selectHwPlanById(planId);
         if (plan == null) return AjaxResult.error("计划不存在");
         List<HwPlanWorker> workers = hwPlanWorkerMapper.selectByPlanId(planId);
-        // 同时加载审核记录
-        HwReview review = hwReviewMapper.selectHwReviewByPlanId(planId);
         Map<String, Object> result = new HashMap<>();
         result.put("plan", plan);
         result.put("workers", workers);
-        result.put("review", review);
         return AjaxResult.success(result);
     }
 
@@ -175,82 +167,4 @@ public class AppHomeworkController extends BaseController
         return worker.getWorkerName().equals(plan.getCreateBy());
     }
 
-    // ==================== 作业审核 ====================
-
-    /** 审核列表（仅作业批准人可见） */
-    @GetMapping("/review/list")
-    public TableDataInfo reviewList(HttpServletRequest req,
-            @RequestParam(defaultValue = "1") Integer pageNum,
-            @RequestParam(defaultValue = "10") Integer pageSize,
-            @RequestParam(required = false) String reviewStatus) {
-        Long workerId = AppTokenUtil.getWorkerId(req);
-        if (workerId == null) {
-            TableDataInfo rsp = new TableDataInfo();
-            rsp.setCode(401); rsp.setMsg("未登录"); rsp.setRows(Collections.emptyList()); rsp.setTotal(0);
-            return rsp;
-        }
-        List<String> roleCodes = tbWorkerRoleRelMapper.selectRoleCodesByWorkerId(workerId);
-        if (!roleCodes.contains("approver")) {
-            TableDataInfo rsp = new TableDataInfo();
-            rsp.setCode(200); rsp.setMsg("success"); rsp.setRows(Collections.emptyList()); rsp.setTotal(0);
-            return rsp;
-        }
-        startPage();
-        HwReview query = new HwReview();
-        if (StringUtils.isNotEmpty(reviewStatus)) query.setReviewStatus(reviewStatus);
-        List<HwReview> list = hwReviewMapper.selectHwReviewList(query);
-        return getDataTable(list);
-    }
-
-    /** 审核详情（含计划信息 + 参与人员） */
-    @GetMapping("/review/{reviewId}")
-    public AjaxResult reviewDetail(HttpServletRequest req, @PathVariable Long reviewId) {
-        Long workerId = AppTokenUtil.getWorkerId(req);
-        if (workerId == null) return AjaxResult.error(401, "未登录");
-        HwReview review = hwReviewMapper.selectHwReviewById(reviewId);
-        if (review == null) return AjaxResult.error("审核记录不存在");
-        HwPlan plan = hwPlanMapper.selectHwPlanById(review.getPlanId());
-        List<HwPlanWorker> workers = hwPlanWorkerMapper.selectByPlanId(review.getPlanId());
-        Map<String, Object> result = new HashMap<>();
-        result.put("review", review);
-        result.put("plan", plan);
-        result.put("workers", workers);
-        return AjaxResult.success(result);
-    }
-
-    /** 审核通过 */
-    @PutMapping("/review/approve")
-    public AjaxResult approveReview(HttpServletRequest req, @RequestBody Map<String, Object> body) {
-        try {
-            Long workerId = AppTokenUtil.getWorkerId(req);
-            if (workerId == null) return AjaxResult.error(401, "未登录");
-            List<String> roleCodes = tbWorkerRoleRelMapper.selectRoleCodesByWorkerId(workerId);
-            if (!roleCodes.contains("approver")) return AjaxResult.error("无审核权限，仅作业批准人可审核");
-
-            Long reviewId = Long.valueOf(body.get("reviewId").toString());
-            String opinion = body.get("reviewOpinion") != null ? body.get("reviewOpinion").toString() : "";
-            hwReviewService.approve(reviewId, opinion);
-            return AjaxResult.success();
-        } catch (ServiceException e) {
-            return AjaxResult.error(e.getMessage());
-        }
-    }
-
-    /** 审核驳回 */
-    @PutMapping("/review/reject")
-    public AjaxResult rejectReview(HttpServletRequest req, @RequestBody Map<String, Object> body) {
-        try {
-            Long workerId = AppTokenUtil.getWorkerId(req);
-            if (workerId == null) return AjaxResult.error(401, "未登录");
-            List<String> roleCodes = tbWorkerRoleRelMapper.selectRoleCodesByWorkerId(workerId);
-            if (!roleCodes.contains("approver")) return AjaxResult.error("无审核权限，仅作业批准人可审核");
-
-            Long reviewId = Long.valueOf(body.get("reviewId").toString());
-            String opinion = body.get("reviewOpinion") != null ? body.get("reviewOpinion").toString() : "";
-            hwReviewService.reject(reviewId, opinion);
-            return AjaxResult.success();
-        } catch (ServiceException e) {
-            return AjaxResult.error(e.getMessage());
-        }
-    }
 }
