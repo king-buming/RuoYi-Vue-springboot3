@@ -30,6 +30,11 @@ public interface AiFaceRegisterMapper
     /** 更新注册记录 */
     public int updateAiFaceRegister(AiFaceRegister entity);
 
+    /** 人脸照片变更后，按人员失效旧AI注册特征 */
+    public int invalidateByWorkerId(@Param("workerId") Long workerId,
+                                    @Param("faceImgUrl") String faceImgUrl,
+                                    @Param("updateBy") String updateBy);
+
     /** 按 register_id 删除 */
     public int deleteAiFaceRegisterById(Long registerId);
 

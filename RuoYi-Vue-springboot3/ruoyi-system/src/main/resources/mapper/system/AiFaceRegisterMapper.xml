@@ -140,6 +140,19 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where register_id = #{registerId}
     </update>
 
+    <update id="invalidateByWorkerId">
+        update ai_face_register
+        set
+            face_img_url = #{faceImgUrl},
+            face_feature = '',
+            register_status = '0',
+            register_time = null,
+            fail_reason = '人脸照片已更新，请重新录入',
+            update_by = #{updateBy},
+            update_time = sysdate()
+        where worker_id = #{workerId}
+    </update>
+
     <delete id="deleteAiFaceRegisterById" parameterType="Long">
         delete from ai_face_register where register_id = #{registerId}
     </delete>

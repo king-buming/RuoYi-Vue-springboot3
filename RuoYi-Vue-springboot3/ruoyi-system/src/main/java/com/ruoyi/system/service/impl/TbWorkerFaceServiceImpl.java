@@ -4,7 +4,10 @@ import java.util.List;
 import com.ruoyi.common.utils.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import com.ruoyi.system.domain.TbWorker;
+import com.ruoyi.system.mapper.AiFaceRegisterMapper;
 import com.ruoyi.system.mapper.TbWorkerFaceMapper;
+import com.ruoyi.system.mapper.TbWorkerMapper;
 import com.ruoyi.system.domain.TbWorkerFace;
 import com.ruoyi.system.service.ITbWorkerFaceService;
 
@@ -19,6 +22,10 @@ public class TbWorkerFaceServiceImpl implements ITbWorkerFaceService
 {
     @Autowired
     private TbWorkerFaceMapper tbWorkerFaceMapper;
+    @Autowired
+    private TbWorkerMapper tbWorkerMapper;
+    @Autowired
+    private AiFaceRegisterMapper aiFaceRegisterMapper;
 
     /**
      * 查询人脸信息
@@ -69,7 +76,9 @@ public class TbWorkerFaceServiceImpl implements ITbWorkerFaceService
 
         if (existingFaces.isEmpty()) {
             tbWorkerFace.setCreateTime(DateUtils.getNowDate());
-            return tbWorkerFaceMapper.insertTbWorkerFace(tbWorkerFace);
+            int rows = tbWorkerFaceMapper.insertTbWorkerFace(tbWorkerFace);
+            markWorkerFaceChanged(tbWorkerFace.getWorkerId(), tbWorkerFace.getFaceImgUrl(), tbWorkerFace.getUpdateBy());
+            return rows;
         }
 
         TbWorkerFace savedFace = existingFaces.get(0);
@@ -85,6 +94,7 @@ public class TbWorkerFaceServiceImpl implements ITbWorkerFaceService
         for (int i = 1; i < existingFaces.size(); i++) {
             tbWorkerFaceMapper.deleteTbWorkerFaceById(existingFaces.get(i).getId());
         }
+        markWorkerFaceChanged(savedFace.getWorkerId(), savedFace.getFaceImgUrl(), tbWorkerFace.getUpdateBy());
         return rows;
     }
 
@@ -97,8 +107,33 @@ public class TbWorkerFaceServiceImpl implements ITbWorkerFaceService
     @Override
     public int updateTbWorkerFace(TbWorkerFace tbWorkerFace)
     {
+        Long workerId = tbWorkerFace.getWorkerId();
+        if (workerId == null && tbWorkerFace.getId() != null) {
+            TbWorkerFace old = tbWorkerFaceMapper.selectTbWorkerFaceById(tbWorkerFace.getId());
+            if (old != null) {
+                workerId = old.getWorkerId();
+            }
+        }
         tbWorkerFace.setUpdateTime(DateUtils.getNowDate());
-        return tbWorkerFaceMapper.updateTbWorkerFace(tbWorkerFace);
+        int rows = tbWorkerFaceMapper.updateTbWorkerFace(tbWorkerFace);
+        if (workerId != null && tbWorkerFace.getFaceImgUrl() != null && !tbWorkerFace.getFaceImgUrl().trim().isEmpty()) {
+            markWorkerFaceChanged(workerId, tbWorkerFace.getFaceImgUrl(), tbWorkerFace.getUpdateBy());
+        }
+        return rows;
+    }
+
+    private void markWorkerFaceChanged(Long workerId, String faceImgUrl, String updateBy)
+    {
+        if (workerId == null || faceImgUrl == null || faceImgUrl.trim().isEmpty()) {
+            return;
+        }
+        TbWorker worker = tbWorkerMapper.selectTbWorkerById(workerId);
+        if (worker != null) {
+            worker.setFaceStatus("1");
+            worker.setAuditStatus("0");
+            tbWorkerMapper.updateTbWorker(worker);
+        }
+        aiFaceRegisterMapper.invalidateByWorkerId(workerId, faceImgUrl, updateBy);
     }
 
     /**

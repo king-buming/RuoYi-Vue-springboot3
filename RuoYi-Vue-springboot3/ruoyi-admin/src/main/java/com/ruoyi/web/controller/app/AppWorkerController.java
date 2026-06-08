@@ -12,6 +12,7 @@ import com.ruoyi.system.mapper.TbWorkerCertMapper;
 import com.ruoyi.system.mapper.TbWorkerFaceMapper;
 import com.ruoyi.system.mapper.TbWorkerMapper;
 import com.ruoyi.system.mapper.TbWorkerRoleRelMapper;
+import com.ruoyi.system.mapper.AiFaceRegisterMapper;
 import com.ruoyi.system.service.ITbWorkerService;
 
 @RestController
@@ -22,6 +23,7 @@ public class AppWorkerController
     @Autowired private TbWorkerCertMapper certMapper;
     @Autowired private TbWorkerRoleRelMapper roleRelMapper;
     @Autowired private TbWorkerFaceMapper faceMapper;
+    @Autowired private AiFaceRegisterMapper aiFaceRegisterMapper;
     @Autowired private ITbWorkerService workerService;
 
     private AjaxResult checkActive(HttpServletRequest req) {
@@ -141,7 +143,12 @@ public class AppWorkerController
         }
 
         TbWorker w = workerMapper.selectTbWorkerById(id);
-        if (w != null) { w.setFaceStatus("1"); workerMapper.updateTbWorker(w); }
+        if (w != null) {
+            w.setFaceStatus("1");
+            w.setAuditStatus("0");
+            workerMapper.updateTbWorker(w);
+        }
+        aiFaceRegisterMapper.invalidateByWorkerId(id, savedFace.getFaceImgUrl(), "worker:" + id);
         return AjaxResult.success(Collections.singletonMap("id", savedFace.getId()));
     }
 
